@@ -210,5 +210,5 @@ __marimo__/
 venv/
 
 # file exports
-.csv
-.xlsx
+*.csv
+*.xlsx
