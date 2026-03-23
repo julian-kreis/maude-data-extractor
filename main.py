@@ -64,13 +64,11 @@ def process_event_data(event, mod_num):
     description = " ".join([t.get("text", "") for t in mdr_text_list if t.get("text")])
 
     return {
-        "Searched MOD": mod_num,
+        "Model Number": mod_num,
         "MDR Report Key": event.get("mdr_report_key", ""),
         "Brand Name": device_info.get("brand_name", "N/A"),
         "Manufacturer": device_info.get("manufacturer_d_name", "N/A"),
         "Lot Number": device_info.get("lot_number", "N/A"),
-        "Problem Codes": "; ".join(device_info.get("mdr_problem_code", [])),
-        "Health Effect Codes": "; ".join(event.get("patient", [{}])[0].get("patient_sequence_number_outcome", [])),
         "Date of Event": event.get("date_of_event", "N/A"),
         "Type of Event": event.get("event_type", "N/A"),
         "Description": description
