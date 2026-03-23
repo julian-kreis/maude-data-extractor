@@ -7,10 +7,16 @@ from dotenv import load_dotenv
 
 BATCH_SIZE = 999 # max number of entries that can be recieved from OpenFDA API with a single call is 1000
 
-def fetch_maude_events(model_number, api_key=None, limit=BATCH_SIZE):
+def fetch_maude_events(model_number, year_filter=None, api_key=None, limit=BATCH_SIZE):
     """Fetches ALL MAUDE adverse event reports using pagination."""
     base_url = "https://api.fda.gov/device/event.json"
-    query = f'device.model_number:"{model_number}" OR device.catalog_number:{model_number}'
+    query = f'(device.model_number:"{model_number}" OR device.catalog_number:"{model_number}")'
+
+    # Add year filter to query if provided
+    if year_filter:
+        year_queries = [f"date_of_event:[{year}0101 TO {year}1231]" for year in year_filter]
+        date_query = " OR ".join(year_queries)
+        query += f" AND ({date_query})"
     
     all_results = []
     skip = 0
@@ -50,7 +56,7 @@ def fetch_maude_events(model_number, api_key=None, limit=BATCH_SIZE):
             
     return all_results
 
-def process_event_data(event, cat_num):
+def process_event_data(event, mod_num):
     """Extracts specific fields from the raw API response."""
     device_info = event.get("device", [{}])[0]
     
@@ -58,7 +64,7 @@ def process_event_data(event, cat_num):
     description = " ".join([t.get("text", "") for t in mdr_text_list if t.get("text")])
 
     return {
-        "Searched CAT": cat_num,
+        "Searched MOD": mod_num,
         "MDR Report Key": event.get("mdr_report_key", ""),
         "Brand Name": device_info.get("brand_name", "N/A"),
         "Manufacturer": device_info.get("manufacturer_d_name", "N/A"),
@@ -116,6 +122,12 @@ def export_to_excel(data, filename="maude_export.xlsx"):
 if __name__ == "__main__":
     cat_input = input("Enter Model Number(s) separated by commas (e.g., HAR1136, HAR1100): ")
     cat_list = [c.strip() for c in cat_input.split(",") if c.strip()]
+
+    year_input = input(
+    "What years would you like to retrieve reports from? "
+    "Enter in a comma-separated list (eg. 2024, 2025) or leave blank to retrieve reports from all years: "
+    ).strip()
+    year_filter = [y.strip() for y in year_input.split(",") if y.strip()] if year_input else None
     
     all_processed_results = []
     MY_API_KEY = os.getenv("FDA_API_KEY")
@@ -123,7 +135,7 @@ if __name__ == "__main__":
     print("\n--- Fetching Data ---")
     for cat in cat_list:
         print(f"Searching for: {cat}...")
-        raw_events = fetch_maude_events(cat, api_key=MY_API_KEY)
+        raw_events = fetch_maude_events(cat, year_filter=year_filter, api_key=MY_API_KEY)
         
         for event in raw_events:
             processed = process_event_data(event, cat)
