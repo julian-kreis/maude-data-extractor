@@ -1,6 +1,7 @@
 import requests
 import csv
 import os
+import re
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -9,7 +10,7 @@ BATCH_SIZE = 999 # max number of entries that can be recieved from OpenFDA API w
 def fetch_maude_events(model_number, api_key=None, limit=BATCH_SIZE):
     """Fetches ALL MAUDE adverse event reports using pagination."""
     base_url = "https://api.fda.gov/device/event.json"
-    query = f'device.model_number:"{model_number}"'
+    query = f'device.model_number:"{model_number}" OR device.catalog_number:{model_number}'
     
     all_results = []
     skip = 0
@@ -85,6 +86,16 @@ def export_to_csv(data, filename="maude_export.csv"):
     except IOError as e:
         print(f"Error writing CSV: {e}")
 
+def clean_excel_text(text):
+    if not isinstance(text, str):
+        return text
+    
+    # Remove illegal control characters
+    text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', text)
+    
+    # Truncate to Excel cell limit (32,767 chars)
+    return text[:32767]
+
 def export_to_excel(data, filename="maude_export.xlsx"):
     """Writes the processed data list to an Excel file using pandas."""
     if not data:
@@ -94,6 +105,8 @@ def export_to_excel(data, filename="maude_export.xlsx"):
     try:
         # Convert list of dicts to a DataFrame
         df = pd.DataFrame(data)
+        # Ensure the text can be written into Excel
+        df = df.apply(lambda col: col.map(clean_excel_text))
         # Export to Excel
         df.to_excel(filename, index=False, engine='openpyxl')
         print(f"Successfully exported to {filename}")
