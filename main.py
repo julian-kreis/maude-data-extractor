@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 
 BATCH_SIZE = 999 # max number of entries that can be recieved from OpenFDA API with a single call is 1000
 
-def fetch_maude_events(catalog_number, api_key=None, limit=BATCH_SIZE):
+def fetch_maude_events(model_number, api_key=None, limit=BATCH_SIZE):
     """Fetches ALL MAUDE adverse event reports using pagination."""
     base_url = "https://api.fda.gov/device/event.json"
-    query = f'device.catalog_number:"{catalog_number}"'
+    query = f'device.model_number:"{model_number}"'
     
     all_results = []
     skip = 0
@@ -40,11 +40,11 @@ def fetch_maude_events(catalog_number, api_key=None, limit=BATCH_SIZE):
             
             # OpenFDA has a hard limit of 25,000 for skip + limit
             if skip + limit > 25000:
-                print(f"Warning: Reached OpenFDA pagination limit for {catalog_number}.")
+                print(f"Warning: Reached OpenFDA pagination limit for {model_number}.")
                 break
 
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching data for {catalog_number}: {e}")
+            print(f"Error fetching data for {model_number}: {e}")
             break
             
     return all_results
@@ -101,7 +101,7 @@ def export_to_excel(data, filename="maude_export.xlsx"):
         print(f"Error writing Excel: {e}")
 
 if __name__ == "__main__":
-    cat_input = input("Enter Catalog Number(s) separated by commas (e.g., HAR1136, HAR1100): ")
+    cat_input = input("Enter Model Number(s) separated by commas (e.g., HAR1136, HAR1100): ")
     cat_list = [c.strip() for c in cat_input.split(",") if c.strip()]
     
     all_processed_results = []
@@ -129,4 +129,4 @@ if __name__ == "__main__":
             export_to_excel(all_processed_results)
             
     else:
-        print("No results found for the provided Catalog Number(s).")
+        print("No results found for the provided Model Number(s).")
