@@ -68,6 +68,14 @@ def process_event_data(event, mod_num):
     product_problems = event.get("product_problems", [])
     product_problems_str = "; ".join([p for p in product_problems if p is not None]) if product_problems else "N/A"
 
+    # Get all patient problems
+    patients = event.get("patient", [])
+    patient_problems = []
+    for p in patients:
+        problems = p.get("patient_problems", [])
+        patient_problems.extend(problems)
+    patient_problems_str = "; ".join(filter(None, patient_problems))
+
     return {
         "Model Number": mod_num,
         "MDR Report Key": event.get("mdr_report_key", ""),
@@ -77,6 +85,7 @@ def process_event_data(event, mod_num):
         "Date of Event": event.get("date_of_event", "N/A"),
         "Type of Event": event.get("event_type", "N/A"),
         "Product Problems": product_problems_str,
+        "Patient Problems": patient_problems_str,
         "Description": description
     }
 
