@@ -2,3 +2,4 @@ requests
 dotenv
 pandas
 openpyxl
+dedupe

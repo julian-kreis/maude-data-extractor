@@ -2,6 +2,7 @@ import requests
 import csv
 import os
 import re
+import dedupe
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -89,6 +90,75 @@ def process_event_data(event, mod_num):
         "Description": description
     }
 
+def run_deduplication(data_list):
+    if len(data_list) < 2:
+        return data_list
+
+    # 1. Prepare data for dedupe
+    def normalize_record(record):
+        cleaned = {}
+        for k, v in record.items():
+            if v in ["", "N/A", "UNKNOWN", None]:
+                cleaned[k] = None
+            else:
+                cleaned[k] = v
+        return cleaned
+
+    data_d = {
+        str(i): normalize_record(record)
+        for i, record in enumerate(data_list)
+    }
+
+    # 2. Define the fields dedupe will pay attention to 
+    fields = [
+        dedupe.variables.Exact('Model Number'),
+        dedupe.variables.Exact('Date of Event'),
+        dedupe.variables.String('Lot Number', has_missing=True),
+        dedupe.variables.String('Type of Event', has_missing=True),
+        dedupe.variables.String('Patient Problems', has_missing=True),
+        dedupe.variables.String('Product Problems', has_missing=True),
+    ]
+
+    # 3. Initialize Deduper
+    deduper = dedupe.Dedupe(fields)
+    settings_file = 'maude_dedupe_settings'
+    training_file = 'maude_dedupe_training.json'
+
+    if os.path.exists(settings_file):
+        print('Reading settings from', settings_file)
+        with open(settings_file, 'rb') as f:
+            deduper = dedupe.StaticDedupe(f)
+    else:
+        # To train, dedupe needs examples. This will prompt you in the console
+        print('Starting active labeling...')
+        deduper.prepare_training(data_d)
+        dedupe.console_label(deduper)
+        deduper.train()
+
+        with open(settings_file, 'wb') as f:
+            deduper.write_settings(f)
+        with open(training_file, 'w') as f:
+            deduper.write_training(f)
+
+    # 5. Clustering
+    # This identifies groups and assigns a confidence score
+    print('Identifying possible duplicates...')
+    clustered_dupes = deduper.partition(data_d, threshold=0.5)
+
+    # 6. Map results back to the original list
+    # Initialize all with 0 (meaning no duplicate found)
+    for record in data_list:
+        record["Possible Duplicate Group"] = 0
+        # record["Confidence Score"] = 0
+
+    for cluster_id, (records, scores) in enumerate(clustered_dupes):
+        for record_id, score in zip(records, scores):
+            idx = int(record_id)
+            data_list[idx]["Possible Duplicate Group"] = cluster_id + 1
+            # data_list[idx]["Confidence Score"] = round(score, 4)
+
+    return data_list
+
 def export_to_csv(data, filename="maude_export.csv"):
     """Writes the processed data list to a CSV file."""
     if not data:
@@ -157,6 +227,10 @@ if __name__ == "__main__":
         print(f" Found {len(raw_events)} events.")
 
     if all_processed_results:
+        # Run Deduplication
+        all_processed_results = run_deduplication(all_processed_results)
+        print("Possible duplicate events labeled")
+
         # --- EXPORT SECTION ---
         csv_choice = input("\nWould you like to export these results to CSV? (y/n): ").lower().strip()
         if csv_choice == 'y':
