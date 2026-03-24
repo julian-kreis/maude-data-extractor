@@ -8,29 +8,39 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 1. **Create a virtual environment**  
 
+```
 python -m venv venv
+```
 
 
 2. **Activate the virtual environment**  
 
 - **Windows:**  
 
+```
 venv\Scripts\activate
+```
 
 - **macOS / Linux:**  
 
+```
 source venv/bin/activate
+```
 
 
 3. **Install dependencies**  
 
+```
 pip install -r requirements.txt
+```
 
 
 4. **Environment variables (optional)**  
 If you have an FDA API key, create a `.env` file in the project root to increase the number of daily API calls you can make:
 
+```
 FDA_API_KEY=your_api_key_here
+```
 
 
 ---
@@ -40,13 +50,15 @@ FDA_API_KEY=your_api_key_here
 Run the main script to fetch, process, and export MAUDE events:
 
 
+```
 python main.py
+```
 
 
 You will be prompted to:
 
 1. **Enter Model Number(s):**  
-Example: `HAR1136, HAR1100`
+Example: `HAR1136, TB-0009OFX`
 
 2. **Enter Years to Retrieve Reports From:**  
 Example: `2024, 2025`  
@@ -59,7 +71,9 @@ You can choose to export results to CSV and/or Excel.
 
 ## Duplicate Training
 
-The script uses the `dedupe` library to identify possible duplicate events.  
+The script uses the `dedupe` library to identify possible duplicate events.
+
+Events identified as likely duplicates will share a `Possible Duplicate Group` number with each other.
 
 - On **first run**, it will prompt you for **active labeling** to train the deduplication model.  
 - Training results are saved to:
@@ -89,12 +103,16 @@ The script uses the `dedupe` library to identify possible duplicate events.
 
 1. Activate the environment:  
 
+```
 venv\Scripts\activate
+```
 
 
 2. Run the script:  
 
+```
 python main.py
+```
 
 
 3. Enter the model numbers and years.
