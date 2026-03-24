@@ -6,7 +6,16 @@ import dedupe
 import pandas as pd
 from dotenv import load_dotenv
 
-BATCH_SIZE = 999 # max number of entries that can be recieved from OpenFDA API with a single call is 1000
+# Number of entries to retrieve with each API call (this is NOT the limit on the total number of entries that can be retrieved by the script)
+# The max number of entries that can be recieved from OpenFDA API with a single call is 1000
+BATCH_SIZE = 999
+
+# Max number of characters in the description to look at when identifying duplicate events
+# Higher will be more accurate, but will take longer to run
+SHORT_DESCRIPTION_LENGTH = 500
+
+# Max number of entries to use when training the algorithm to identify duplicate events
+TRAINING_SAMPLE_SIZE = 500
 
 def fetch_maude_events(model_number, year_filter=None, api_key=None, limit=BATCH_SIZE):
     """Fetches ALL MAUDE adverse event reports using pagination."""
@@ -118,10 +127,10 @@ def run_deduplication(data_list):
             else:
                 cleaned[k] = v
         
-        # Truncate the description to 500 characters ---
+        # Truncate the description to n characters ---
         desc = record.get('Description', '')
         if desc:
-            cleaned['Description_Short'] = str(desc)[:500]
+            cleaned['Description_Short'] = str(desc)[:SHORT_DESCRIPTION_LENGTH]
         else:
             cleaned['Description_Short'] = None
             
@@ -155,7 +164,7 @@ def run_deduplication(data_list):
     else:
         # To train, dedupe needs examples. This will prompt you in the console
         print('Starting active labeling...')
-        deduper.prepare_training(data_d, sample_size=500)
+        deduper.prepare_training(data_d, sample_size=TRAINING_SAMPLE_SIZE)
         dedupe.console_label(deduper)
         deduper.train()
 
@@ -255,7 +264,7 @@ if __name__ == "__main__":
         all_processed_results = run_deduplication(all_processed_results)
         print("Possible duplicate events labeled")
 
-        # --- EXPORT SECTION ---
+        # Run Exports
         csv_choice = input("\nWould you like to export these results to CSV? (y/n): ").lower().strip()
         if csv_choice == 'y':
             export_to_csv(all_processed_results)
