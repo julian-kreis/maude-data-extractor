@@ -74,8 +74,7 @@ You can choose to export results to CSV and/or Excel.
 The script uses the `dedupe` library to identify possible duplicate events.
 
 Events identified as likely duplicates will share a `Possible Duplicate Group` number with each other.
-
-- On **first run**, it will prompt you for **active labeling** to train the deduplication model.  
+ 
 - Training results are saved to:
 
   - `maude_dedupe_settings` → Stores the trained dedupe model  
