@@ -60,8 +60,13 @@ def process_event_data(event, mod_num):
     """Extracts specific fields from the raw API response."""
     device_info = event.get("device", [{}])[0]
     
+    # Get all narrative on the description of the event
     mdr_text_list = event.get("mdr_text", [])
     description = " ".join([t.get("text", "") for t in mdr_text_list if t.get("text")])
+
+    # Get all product problems
+    product_problems = event.get("product_problems", [])
+    product_problems_str = "; ".join([p for p in product_problems if p is not None]) if product_problems else "N/A"
 
     return {
         "Model Number": mod_num,
@@ -71,6 +76,7 @@ def process_event_data(event, mod_num):
         "Lot Number": device_info.get("lot_number", "N/A"),
         "Date of Event": event.get("date_of_event", "N/A"),
         "Type of Event": event.get("event_type", "N/A"),
+        "Product Problems": product_problems_str,
         "Description": description
     }
 
