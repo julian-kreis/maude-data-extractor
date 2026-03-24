@@ -58,12 +58,26 @@ def fetch_maude_events(model_number, year_filter=None, api_key=None, limit=BATCH
     return all_results
 
 def process_event_data(event, mod_num):
-    """Extracts specific fields from the raw API response."""
+    """Extracts specific fields from the raw API response with separate manufacturer narrative."""
     device_info = event.get("device", [{}])[0]
     
-    # Get all narrative on the description of the event
+    # Get all MDR text entries
     mdr_text_list = event.get("mdr_text", [])
-    description = " ".join([t.get("text", "") for t in mdr_text_list if t.get("text")])
+
+    # Separate Description vs Additional Manufacturer Narrative
+    description_texts = [
+        t.get("text", "")
+        for t in mdr_text_list
+        if t.get("text") and t.get("text_type_code") == "Description of Event or Problem"
+    ]
+    description = " ".join(description_texts)
+
+    manufacturer_narrative_texts = [
+        t.get("text", "")
+        for t in mdr_text_list
+        if t.get("text") and t.get("text_type_code") == "Additional Manufacturer Narrative"
+    ]
+    manufacturer_narrative = " ".join(manufacturer_narrative_texts) if manufacturer_narrative_texts else "N/A"
 
     # Get all product problems
     product_problems = event.get("product_problems", [])
@@ -75,7 +89,7 @@ def process_event_data(event, mod_num):
     for p in patients:
         problems = p.get("patient_problems", [])
         patient_problems.extend(problems)
-    patient_problems_str = "; ".join(filter(None, patient_problems))
+    patient_problems_str = "; ".join(filter(None, patient_problems)) if patient_problems else "N/A"
 
     return {
         "Model Number": mod_num,
@@ -87,7 +101,8 @@ def process_event_data(event, mod_num):
         "Type of Event": event.get("event_type", "N/A"),
         "Product Problems": product_problems_str,
         "Patient Problems": patient_problems_str,
-        "Description": description
+        "Description": description,
+        "Additional Manufacturer Narrative": manufacturer_narrative
     }
 
 def run_deduplication(data_list):
@@ -102,6 +117,14 @@ def run_deduplication(data_list):
                 cleaned[k] = None
             else:
                 cleaned[k] = v
+        
+        # Truncate the description to 500 characters ---
+        desc = record.get('Description', '')
+        if desc:
+            cleaned['Description_Short'] = str(desc)[:500]
+        else:
+            cleaned['Description_Short'] = None
+            
         return cleaned
 
     data_d = {
@@ -112,11 +135,12 @@ def run_deduplication(data_list):
     # 2. Define the fields dedupe will pay attention to 
     fields = [
         dedupe.variables.Exact('Model Number'),
-        dedupe.variables.Exact('Date of Event'),
+        dedupe.variables.String('Date of Event', has_missing=True),
         dedupe.variables.String('Lot Number', has_missing=True),
         dedupe.variables.String('Type of Event', has_missing=True),
         dedupe.variables.String('Patient Problems', has_missing=True),
         dedupe.variables.String('Product Problems', has_missing=True),
+        dedupe.variables.Text('Description_Short', has_missing=True),
     ]
 
     # 3. Initialize Deduper
@@ -131,7 +155,7 @@ def run_deduplication(data_list):
     else:
         # To train, dedupe needs examples. This will prompt you in the console
         print('Starting active labeling...')
-        deduper.prepare_training(data_d)
+        deduper.prepare_training(data_d, sample_size=500)
         dedupe.console_label(deduper)
         deduper.train()
 
