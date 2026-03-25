@@ -12,10 +12,10 @@ BATCH_SIZE = 999
 
 # Max number of characters in the description to look at when identifying duplicate events
 # Higher will be more accurate, but will take longer to run
-SHORT_DESCRIPTION_LENGTH = 500
+SHORT_DESCRIPTION_LENGTH = 1000
 
 # Max number of entries to use when training the algorithm to identify duplicate events
-TRAINING_SAMPLE_SIZE = 500
+TRAINING_SAMPLE_SIZE = 1000
 
 # Priority of event to keep when merging duplicate groups into one entry
 EVENT_SEVERITY = {"Other": 0, "Malfunction": 1, "Injury": 2, "Death": 3}
@@ -166,7 +166,7 @@ def run_deduplication(data_list):
             deduper = dedupe.StaticDedupe(f)
     else:
         # To train, dedupe needs examples. This will prompt you in the console
-        print('Starting active labeling...')
+        print('No settings file found. Starting active labeling.\nOnce data is prepared, you will be prompted to help train the identification algorithm...')
         deduper.prepare_training(data_d, sample_size=TRAINING_SAMPLE_SIZE)
         dedupe.console_label(deduper)
         deduper.train()

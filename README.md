@@ -97,8 +97,8 @@ Events identified as likely duplicates will share a `Possible Duplicate Group` n
 | Constant | Description | Default |
 |----------|------------|---------|
 | `BATCH_SIZE` | Number of entries to retrieve per API call (max 1000) | 999 |
-| `SHORT_DESCRIPTION_LENGTH` | Max characters of description to use for duplicate detection | 500 |
-| `TRAINING_SAMPLE_SIZE` | Number of entries used to train the dedupe model | 500 |
+| `SHORT_DESCRIPTION_LENGTH` | Max characters of description to use for duplicate detection | 1000 |
+| `TRAINING_SAMPLE_SIZE` | Number of entries used to train the dedupe model | 1000 |
 
 ---
 
