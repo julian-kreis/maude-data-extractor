@@ -17,6 +17,9 @@ SHORT_DESCRIPTION_LENGTH = 500
 # Max number of entries to use when training the algorithm to identify duplicate events
 TRAINING_SAMPLE_SIZE = 500
 
+# Priority of event to keep when merging duplicate groups into one entry
+EVENT_SEVERITY = {"Other": 0, "Malfunction": 1, "Injury": 2, "Death": 3}
+
 def fetch_maude_events(model_number, year_filter=None, api_key=None, limit=BATCH_SIZE):
     """Fetches ALL MAUDE adverse event reports using pagination."""
     base_url = "https://api.fda.gov/device/event.json"
@@ -196,6 +199,59 @@ def run_deduplication(data_list):
 
     return data_list
 
+def merge_duplicate_groups(data_list):
+    grouped = {}
+    singles = []
+
+    # 1. Categorize records once
+    for record in data_list:
+        gid = record.get("Possible Duplicate Group", 0)
+        if gid > 0:
+            grouped.setdefault(gid, []).append(record)
+        else:
+            singles.append(record)
+
+    merged_results = []
+    
+    # 2. Process groups
+    for gid, records in grouped.items():
+        # Use first record as base template
+        base = records[0].copy()
+        
+        for other in records[1:]:
+            # --- Fill Blanks & Combine Narratives ---
+            for key in ["Description", "Additional Manufacturer Narrative"]:
+                val = other.get(key, "").strip()
+                if val and val not in base[key]:
+                    base[key] += f" :ADDITIONAL INFO FROM DUPLICATE REPORT: {val}"
+
+            # --- Fill other missing fields ---
+            for k, v in other.items():
+                if base.get(k) in ["", "N/A", None] and v not in ["", "N/A", None]:
+                    base[k] = v
+
+            # --- Union Problem Sets (Helper logic) ---
+            for field in ["Product Problems", "Patient Problems"]:
+                base_vals = set(str(base.get(field, "")).split("; "))
+                other_vals = set(str(other.get(field, "")).split("; "))
+                combined = sorted({p for p in base_vals | other_vals if p and p != "N/A"})
+                base[field] = "; ".join(combined) if combined else "N/A"
+
+            # --- Severity Check ---
+            base_sev = EVENT_SEVERITY.get(base.get("Type of Event", "Other"), 0)
+            other_sev = EVENT_SEVERITY.get(other.get("Type of Event", "Other"), 0)
+            if other_sev > base_sev:
+                base["Type of Event"] = other["Type of Event"]
+
+        merged_results.append(base)
+
+    # 3. Get final list of events and remove Possible Duplicate Group field
+    final_list = merged_results + singles
+    for record in final_list:
+        record.pop("Possible Duplicate Group", None)
+
+    return final_list
+
 def export_to_csv(data, filename="maude_export.csv"):
     """Writes the processed data list to a CSV file."""
     if not data:
@@ -269,12 +325,19 @@ if __name__ == "__main__":
         if dedupe_choice == 'y':
             all_processed_results = run_deduplication(all_processed_results)
 
+            # Check if any groups actually exist before asking
+            has_groups = any(r.get("Possible Duplicate Group", 0) > 0 for r in all_processed_results)
+            
+            # Merge duplicate groups
+            if has_groups and input("\nWould you like to merge likely duplicate event groups into one entry? (y/n): ").lower() == 'y':
+                all_processed_results = merge_duplicate_groups(all_processed_results)
+
         # Run Exports
         csv_choice = input("\nWould you like to export these results to CSV? (y/n): ").lower().strip()
         if csv_choice == 'y':
             export_to_csv(all_processed_results)
 
-        excel_choice = input("Would you like to export these results to Excel? (y/n): ").lower().strip()
+        excel_choice = input("\nWould you like to export these results to Excel? (y/n): ").lower().strip()
         if excel_choice == 'y':
             export_to_excel(all_processed_results)
             

@@ -62,10 +62,10 @@ Example: `HAR1136, TB-0009OFX`
 
 2. **Enter Years to Retrieve Reports From:**  
 Example: `2024, 2025`  
-Leave blank to retrieve all available years.
+Leave blank to retrieve all available years
 
 3. **Deduplication Options**
-You can choose if you want to label possible duplicate groups
+You can choose if you want to label possible duplicate groups   
 Then you can choose if you want to merge duplicate groups into one entry
 
 4. **Export Options:**  
