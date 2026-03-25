@@ -190,6 +190,10 @@ def run_deduplication(data_list):
             data_list[idx]["Possible Duplicate Group"] = cluster_id + 1
             # data_list[idx]["Confidence Score"] = round(score, 4)
 
+    # Count of duplicate events (counts only the extra records beyond the first one in each group)
+    duplicate_event_count = sum(len(records) - 1 for records, _ in clustered_dupes)
+    print(f"{duplicate_event_count} likely duplicate events found")
+
     return data_list
 
 def export_to_csv(data, filename="maude_export.csv"):
@@ -236,7 +240,7 @@ def export_to_excel(data, filename="maude_export.xlsx"):
         print(f"Error writing Excel: {e}")
 
 if __name__ == "__main__":
-    cat_input = input("Enter Model Number(s) separated by commas (e.g., HAR1136, HAR1100): ")
+    cat_input = input("Enter Model Number(s) separated by commas (e.g., HAR1136, TB-0009OFX): ")
     cat_list = [c.strip() for c in cat_input.split(",") if c.strip()]
 
     year_input = input(
@@ -261,8 +265,9 @@ if __name__ == "__main__":
 
     if all_processed_results:
         # Run Deduplication
-        all_processed_results = run_deduplication(all_processed_results)
-        print("Possible duplicate events labeled")
+        dedupe_choice = input("\nWould you like to label likely duplicate events? (y/n): ").lower().strip()
+        if dedupe_choice == 'y':
+            all_processed_results = run_deduplication(all_processed_results)
 
         # Run Exports
         csv_choice = input("\nWould you like to export these results to CSV? (y/n): ").lower().strip()

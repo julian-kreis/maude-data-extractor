@@ -64,7 +64,11 @@ Example: `HAR1136, TB-0009OFX`
 Example: `2024, 2025`  
 Leave blank to retrieve all available years.
 
-3. **Export Options:**  
+3. **Deduplication Options**
+You can choose if you want to label possible duplicate groups
+Then you can choose if you want to merge duplicate groups into one entry
+
+4. **Export Options:**  
 You can choose to export results to CSV and/or Excel.
 
 ---
@@ -116,6 +120,6 @@ python main.py
 
 3. Enter the model numbers and years.
 
-4. Train deduplication (first run only, or after deleting settings/training files).
+4. Run duplicate event identifier
 
 5. Export results to CSV/Excel.
