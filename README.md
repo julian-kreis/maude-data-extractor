@@ -64,7 +64,7 @@ Example: `HAR1136, TB-0009OFX`
 Example: `2024, 2025`  
 Leave blank to retrieve all available years
 
-3. **Deduplication Options**
+3. **Deduplication Options**  
 You can choose if you want to label possible duplicate groups   
 Then you can choose if you want to merge duplicate groups into one entry
 
@@ -88,7 +88,7 @@ Events identified as likely duplicates will share a `Possible Duplicate Group` n
 
 - `SHORT_DESCRIPTION_LENGTH` controls how many characters of the event description are used for duplicate detection. Higher values increase accuracy but may slow processing.
 - `TRAINING_SAMPLE_SIZE` controls the number of records used for training.
-- **To retrain the dedupe model**, delete both `maude_dedupe_settings` and `maude_dedupe_training.json` before rerunning the script. When training the dedupe model, it is recomended to use a dataset with multiple device models.  
+- **To retrain the dedupe model**, delete both `maude_dedupe_settings` and `maude_dedupe_training.json` before rerunning the script. When training the dedupe model, it is recomended to use as broad of a dataset as possible.  
 
 ---
 
@@ -120,6 +120,6 @@ python main.py
 
 3. Enter the model numbers and years.
 
-4. Run duplicate event identifier
+4. Choose whether or not to label possible events, and whether or not to merge them
 
 5. Export results to CSV/Excel.
