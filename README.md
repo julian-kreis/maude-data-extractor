@@ -75,7 +75,9 @@ You can choose to export results to CSV and/or Excel.
 
 ## Duplicate Training
 
-The script uses the `dedupe` library to identify possible duplicate events.
+The script uses the `dedupe` library to identify possible duplicate reports (reports that all reference the same event).
+
+Note that these are simply informed guesses based on training data, and results should be double checked.
 
 Events identified as likely duplicates will share a `Possible Duplicate Group` number with each other.
  
