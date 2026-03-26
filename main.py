@@ -176,12 +176,12 @@ def run_deduplication(data_list):
         with open(training_file, 'w') as f:
             deduper.write_training(f)
 
-    # 5. Clustering
+    # 4. Clustering
     # This identifies groups and assigns a confidence score
     print('Identifying possible duplicates...')
     clustered_dupes = deduper.partition(data_d, threshold=0.5)
 
-    # 6. Map results back to the original list
+    # 5. Map results back to the original list
     # Initialize all with 0 (meaning no duplicate found)
     for record in data_list:
         record["Possible Duplicate Group"] = 0
@@ -306,6 +306,8 @@ if __name__ == "__main__":
     year_filter = [y.strip() for y in year_input.split(",") if y.strip()] if year_input else None
     
     all_processed_results = []
+
+    load_dotenv()
     MY_API_KEY = os.getenv("FDA_API_KEY")
 
     print("\n--- Fetching Data ---")
