@@ -258,13 +258,18 @@ def export_to_csv(data, filename="maude_export.csv"):
         print("No data to export.")
         return
 
+    export_dir = "csv_exports"
+    os.makedirs(export_dir, exist_ok=True)
+
+    filepath = os.path.join(export_dir, filename)
+
     keys = data[0].keys()
     try:
-        with open(filename, 'w', newline='', encoding='utf-8') as f:
+        with open(filepath, 'w', newline='', encoding='utf-8') as f:
             dict_writer = csv.DictWriter(f, fieldnames=keys)
             dict_writer.writeheader()
             dict_writer.writerows(data)
-        print(f"Successfully exported to {filename}")
+        print(f"Successfully exported to {filepath}")
     except IOError as e:
         print(f"Error writing CSV: {e}")
 
@@ -284,14 +289,19 @@ def export_to_excel(data, filename="maude_export.xlsx"):
         print("No data to export.")
         return
 
+    export_dir = "excel_exports"
+    os.makedirs(export_dir, exist_ok=True)
+
+    filepath = os.path.join(export_dir, filename)
+
     try:
         # Convert list of dicts to a DataFrame
         df = pd.DataFrame(data)
         # Ensure the text can be written into Excel
         df = df.apply(lambda col: col.map(clean_excel_text))
         # Export to Excel
-        df.to_excel(filename, index=False, engine='openpyxl')
-        print(f"Successfully exported to {filename}")
+        df.to_excel(filepath, index=False, engine='openpyxl')
+        print(f"Successfully exported to {filepath}")
     except Exception as e:
         print(f"Error writing Excel: {e}")
 
@@ -336,12 +346,17 @@ if __name__ == "__main__":
 
         # Run Exports
         csv_choice = input("\nWould you like to export these results to CSV? (y/n): ").lower().strip()
-        if csv_choice == 'y':
-            export_to_csv(all_processed_results)
 
         excel_choice = input("\nWould you like to export these results to Excel? (y/n): ").lower().strip()
-        if excel_choice == 'y':
-            export_to_excel(all_processed_results)
+
+        if csv_choice == 'y' or excel_choice == 'y':
+            filename = input("\nEnter your desired filename: ").strip() or "maude_export"
+
+            if csv_choice == 'y':
+                export_to_csv(all_processed_results, f"{filename}.csv")
+
+            if excel_choice == 'y':
+                export_to_excel(all_processed_results, f"{filename}.xlsx")
             
     else:
         print("No results found for the provided Model Number(s).")
