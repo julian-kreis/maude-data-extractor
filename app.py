@@ -1,8 +1,5 @@
 import streamlit as st
 import os
-import json
-import io
-import pandas as pd
 from dotenv import load_dotenv
 
 # Importing functions AND folder constants from retrieve
@@ -12,13 +9,18 @@ from retrieve import (
     run_deduplication,
     merge_duplicate_groups,
     export_to_json,
-    JSON_FOLDER
+    export_to_csv,
+    export_to_excel,
+    JSON_FOLDER,
+    CSV_FOLDER,
+    EXCEL_FOLDER
 )
 
 load_dotenv()
 
 # --- Utility: Ensure Folders Exist ---
-os.makedirs(JSON_FOLDER, exist_ok=True)
+for folder in [JSON_FOLDER, CSV_FOLDER, EXCEL_FOLDER]:
+    os.makedirs(folder, exist_ok=True)
 
 # --- Helper Functions ---
 def get_json_files():
@@ -26,69 +28,23 @@ def get_json_files():
         return []
     return sorted([f for f in os.listdir(JSON_FOLDER) if f.endswith(".json")])
 
-def stream_json_objects(path):
-    decoder = json.JSONDecoder()
-    with open(path, "r", encoding="utf-8") as f:
-        buffer = ""
-        for chunk in iter(lambda: f.read(8192), ""):
-            buffer += chunk
-            while buffer:
-                buffer = buffer.lstrip()
-                try:
-                    obj, idx = decoder.raw_decode(buffer)
-                    yield obj
-                    buffer = buffer[idx:]
-                except json.JSONDecodeError:
-                    break
-
-def convert_to_csv_bytes_stream(filename):
-    path = os.path.join(JSON_FOLDER, filename)
-    output = io.StringIO()
-
-    first = True
-    for obj in stream_json_objects(path):
-        df = pd.DataFrame([obj])
-        df.to_csv(output, index=False, header=first)
-        first = False
-
-    return output.getvalue().encode("utf-8")
-
-def convert_to_excel_bytes_stream(filename):
-    path = os.path.join(JSON_FOLDER, filename)
-    output = io.BytesIO()
-
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        row = 0
-        header_written = False
-
-        for obj in stream_json_objects(path):
-            df = pd.DataFrame([obj])
-            df.to_excel(
-                writer,
-                index=False,
-                startrow=row,
-                header=not header_written
-            )
-            header_written = True
-            row += len(df)
-
-    return output.getvalue()
-
-def stream_json_download(path):
-    with open(path, "rb") as f:
-        return f.read()
-
-def stream_csv_download(filename):
-    return convert_to_csv_bytes_stream(filename)
-
-def stream_excel_download(filename):
-    return convert_to_excel_bytes_stream(filename)
+def get_file_size_info(filepath):
+    """Returns a formatted string of the file size."""
+    if not os.path.exists(filepath):
+        return "N/A"
+    size_bytes = os.path.getsize(filepath)
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    else:
+        return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 # --- UI Configuration ---
-st.set_page_config(page_title="MAUDE Data Manager", page_icon="🏥", layout="wide")
+st.set_page_config(page_title="MAUDE Data Extractor", page_icon="🏥", layout="wide")
 
 def main():
-    st.title("🏥 MAUDE Data Manager")
+    st.title("🏥 MAUDE Data Extractor")
 
     # --- Sidebar: API Configuration ---
     with st.sidebar:
@@ -100,39 +56,36 @@ def main():
             st.success("API Key active.")
 
     # --- Section 1: Data Retrieval ---
-    st.header("1. Fetch & Archive Data")
+    st.header("Fetch & Save Data")
     
     with st.container(border=True):
         col_a, col_b = st.columns(2)
         with col_a:
-            cat_input = st.text_input("Model Number(s)", placeholder="e.g., HAR1136")
+            cat_input = st.text_input("Model Number(s)", placeholder="e.g. HAR1136, TB-0009OFX")
         with col_b:
-            year_input = st.text_input("Year Filter", placeholder="e.g., 2024")
+            year_input = st.text_input("Year(s) (Optional)", placeholder="e.g. 2024, 2025")
 
         st.subheader("Processing Options")
         c1, c2 = st.columns(2)
-        do_dedupe = c1.checkbox("Deduplicate results", value=True)
+        do_dedupe = c1.checkbox("Mark possible duplicate groups", value=True)
         do_merge = c2.checkbox("Merge duplicate groups", value=True, disabled=not do_dedupe)
 
-        # Default value is empty string
         filename = st.text_input(
             "Save as (Filename)",
             value="",
             key="filename_input",
-            placeholder="Enter a filename to enable export"
+            placeholder="e.g. MyReport"
         )
         
         full_filename = f"{filename}.json" if filename.strip() else ""
         file_exists = os.path.exists(os.path.join(JSON_FOLDER, full_filename)) if full_filename else False
 
-        # Overwrite Confirmation Logic
         confirm_overwrite = False
         if file_exists:
-            st.warning(f"⚠️ A file named '{full_filename}' already exists.")
+            st.warning(f"⚠️ A record named '{filename}' already exists.")
             confirm_overwrite = st.checkbox("Confirm Overwrite")
 
-        # Added check for 'filename' to the button condition
-        if st.button("🚀 Run & Save to JSON", type="primary"):
+        if st.button("🚀 Run & Save Records", type="primary"):
             if not cat_input:
                 st.error("Model Number is required.")
             elif not filename.strip():
@@ -145,61 +98,82 @@ def main():
 
     st.divider()
 
-    # --- Section 2: JSON File Management ---
-    st.header("2. Manage Records")
+    # --- Section 2: Manage Records ---
+    st.header("Manage Records")
     
     json_files = get_json_files()
     
     if not json_files:
         st.info("No saved records found.")
     else:
-        h_col1, h_col2, h_col3 = st.columns([2, 3, 1])
-        h_col1.write("**Stored Record (JSON)**")
-        h_col2.write("**Convert & Download**")
+        h_col1, h_col2, h_col3 = st.columns([2, 4, 1])
+        h_col1.write("**Stored Record Name**")
+        h_col2.write("**Downloads**")
         h_col3.write("**Delete**")
 
         for f in json_files:
-            col1, col2, col3 = st.columns([2, 3, 1])
+            col1, col2, col3 = st.columns([2, 4, 1])
             
-            file_path = os.path.join(JSON_FOLDER, f)
-            size_kb = os.path.getsize(file_path) / 1024
-            col1.markdown(f"**{f}** \n`{size_kb:.1f} KB`")
+            # Clean name (strip .json)
+            clean_name = f.replace(".json", "")
+            
+            # Define paths for all three formats
+            json_path = os.path.join(JSON_FOLDER, f)
+            csv_path = os.path.join(CSV_FOLDER, f.replace(".json", ".csv"))
+            xlsx_path = os.path.join(EXCEL_FOLDER, f.replace(".json", ".xlsx"))
+
+            # Display the clean name
+            col1.markdown(f"**{clean_name}**")
 
             try:
                 btn_json, btn_csv, btn_xlsx = col2.columns(3)
 
-                # JSON (true streaming, no memory load)
+                # JSON Download
+                json_size = get_file_size_info(json_path)
                 btn_json.download_button(
-                    "JSON",
-                    data=open(file_path, "rb"),
+                    f"JSON ({json_size})",
+                    data=open(json_path, "rb"),
                     file_name=f,
-                    mime="application/json"
+                    mime="application/json",
+                    key=f"dl_json_{f}"
                 )
 
-                # CSV (lazy conversion)
-                btn_csv.download_button(
-                    "CSV",
-                    data=lambda f=f: convert_to_csv_bytes_stream(f),
-                    file_name=f.replace(".json", ".csv"),
-                    mime="text/csv"
-                )
+                # CSV Download
+                csv_size = get_file_size_info(csv_path)
+                if os.path.exists(csv_path):
+                    btn_csv.download_button(
+                        f"CSV ({csv_size})",
+                        data=open(csv_path, "rb"),
+                        file_name=f.replace(".json", ".csv"),
+                        mime="text/csv",
+                        key=f"dl_csv_{f}"
+                    )
+                else:
+                    btn_csv.button("CSV N/A", disabled=True, key=f"dl_csv_na_{f}")
 
-                # Excel (lazy conversion)
-                btn_xlsx.download_button(
-                    "Excel",
-                    data=lambda f=f: convert_to_excel_bytes_stream(f),
-                    file_name=f.replace(".json", ".xlsx"),
-                    mime="application/vnd.ms-excel"
-                )
+                # Excel Download
+                xlsx_size = get_file_size_info(xlsx_path)
+                if os.path.exists(xlsx_path):
+                    btn_xlsx.download_button(
+                        f"Excel ({xlsx_size})",
+                        data=open(xlsx_path, "rb"),
+                        file_name=f.replace(".json", ".xlsx"),
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key=f"dl_xlsx_{f}"
+                    )
+                else:
+                    btn_xlsx.button("Excel N/A", disabled=True, key=f"dl_xlsx_na_{f}")
             
-            except Exception:
-                col2.error("Error loading file")
+            except Exception as e:
+                col2.error("Error accessing files")
 
-            # Delete triggers st.rerun(), which closes the popover by refreshing the view
+            # Delete logic deletes file from all three folders
             with col3.popover("🗑️"):
-                st.write(f"Delete '{f}'?")
+                st.write(f"Delete '{clean_name}' from records?")
                 if st.button("Confirm Delete", key=f"del_{f}", type="primary"):
-                    os.remove(file_path)
+                    for path in [json_path, csv_path, xlsx_path]:
+                        if os.path.exists(path):
+                            os.remove(path)
                     st.rerun()
 
 def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, api_key):
@@ -209,34 +183,48 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
     all_processed_results = []
     status_text = st.empty()
     
+    # Progress bars and logic
     progress_bar = st.progress(0)
-    progress_bar_progress = 0
-    progress_bar_length = len(cat_list)
-    if do_dedupe: progress_bar_length += 1 
-    if do_merge: progress_bar_length += 1
+    steps = len(cat_list) + (1 if do_dedupe else 0) + (1 if do_merge else 0) + 3 # +3 for the 3 exports
+    current_step = 0
 
-    for idx, cat in enumerate(cat_list):
+    for cat in cat_list:
         status_text.text(f"Fetching: {cat}...")
         raw_events = fetch_maude_events(cat, year_filter=year_filter, api_key=api_key)
         for event in raw_events:
             all_processed_results.append(process_event_data(event, cat))
-        progress_bar_progress += 1
-        progress_bar.progress(progress_bar_progress / progress_bar_length)
+        current_step += 1
+        progress_bar.progress(current_step / steps)
 
     if all_processed_results:
         if do_dedupe:
             status_text.text("Cleaning duplicates...")
             all_processed_results = run_deduplication(all_processed_results)
-            progress_bar_progress += 1
-            progress_bar.progress(progress_bar_progress / progress_bar_length)
+            current_step += 1
+            progress_bar.progress(current_step / steps)
             if do_merge:
                 all_processed_results = merge_duplicate_groups(all_processed_results)
-                progress_bar_progress += 1
-                progress_bar.progress(progress_bar_progress / progress_bar_length)
+                current_step += 1
+                progress_bar.progress(current_step / steps)
 
+        # SAVE ALL THREE FORMATS
+        status_text.text("Saving JSON...")
         export_to_json(all_processed_results, f"{filename}.json")
+        current_step += 1
+        progress_bar.progress(current_step / steps)
+
+        status_text.text("Saving CSV...")
+        export_to_csv(all_processed_results, f"{filename}.csv")
+        current_step += 1
+        progress_bar.progress(current_step / steps)
+
+        status_text.text("Saving Excel...")
+        export_to_excel(all_processed_results, f"{filename}.xlsx")
+        current_step += 1
+        progress_bar.progress(current_step / steps)
+
         status_text.empty()
-        st.success(f"Archived {len(all_processed_results)} events to {filename}.json")
+        st.success(f"Successfully archived '{filename}' in JSON, CSV, and Excel formats.")
     else:
         status_text.empty()
         st.warning("No results found.")
