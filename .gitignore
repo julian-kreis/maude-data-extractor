@@ -212,7 +212,7 @@ venv/
 # file exports
 *.csv
 *.xlsx
-data_csv_exports/
-data_excel_exports/
-analysis_csv_exports/
-analysis_excel_exports/
+data_json/
+data_csv/
+data_excel/
+analysis_txt/

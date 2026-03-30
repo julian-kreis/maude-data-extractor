@@ -1,4 +1,5 @@
 import requests
+import json
 import csv
 import os
 import re
@@ -252,13 +253,31 @@ def merge_duplicate_groups(data_list):
 
     return final_list
 
+def export_to_json(data, filename="maude_export.json"):
+    """Writes the processed data list to a JSON file."""
+    if not data:
+        print("No data to export.")
+        return
+
+    export_dir = "data_json"
+    os.makedirs(export_dir, exist_ok=True)
+
+    filepath = os.path.join(export_dir, filename)
+
+    try:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        print(f"Successfully exported to {filepath}")
+    except Exception as e:
+        print(f"Error writing JSON: {e}")
+
 def export_to_csv(data, filename="maude_export.csv"):
     """Writes the processed data list to a CSV file."""
     if not data:
         print("No data to export.")
         return
 
-    export_dir = "data_csv_exports"
+    export_dir = "data_csv"
     os.makedirs(export_dir, exist_ok=True)
 
     filepath = os.path.join(export_dir, filename)
@@ -289,7 +308,7 @@ def export_to_excel(data, filename="maude_export.xlsx"):
         print("No data to export.")
         return
 
-    export_dir = "data_excel_exports"
+    export_dir = "data_excel"
     os.makedirs(export_dir, exist_ok=True)
 
     filepath = os.path.join(export_dir, filename)
@@ -310,7 +329,7 @@ if __name__ == "__main__":
     cat_list = [c.strip() for c in cat_input.split(",") if c.strip()]
 
     year_input = input(
-    "What years would you like to retrieve reports from? "
+    "\nWhat years would you like to retrieve reports from? "
     "Enter in a comma-separated list (eg. 2024, 2025) or leave blank to retrieve reports from all years: "
     ).strip()
     year_filter = [y.strip() for y in year_input.split(",") if y.strip()] if year_input else None
@@ -343,14 +362,20 @@ if __name__ == "__main__":
             # Merge duplicate groups
             if has_groups and input("\nWould you like to merge likely duplicate event groups into one entry? (y/n): ").lower() == 'y':
                 all_processed_results = merge_duplicate_groups(all_processed_results)
+                print("Duplicate event groups merged")
 
         # Run Exports
-        csv_choice = input("\nWould you like to export these results to CSV? (y/n): ").lower().strip()
+        json_choice = input("\nWould you like to export to JSON? (required for running \"analyze.py\") (y/n): ").lower().strip()
 
-        excel_choice = input("\nWould you like to export these results to Excel? (y/n): ").lower().strip()
+        csv_choice = input("\nWould you like to export to CSV? (best for AI analysis) (y/n): ").lower().strip()
+
+        excel_choice = input("\nWould you like to export to Excel? (y/n): ").lower().strip()
 
         if csv_choice == 'y' or excel_choice == 'y':
             filename = input("\nEnter your desired filename: ").strip() or "maude_export"
+
+            if json_choice == 'y':
+                export_to_json(all_processed_results, f"{filename}.json")
 
             if csv_choice == 'y':
                 export_to_csv(all_processed_results, f"{filename}.csv")
