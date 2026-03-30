@@ -101,7 +101,7 @@ def main():
             st.warning(f"⚠️ A record named '{filename}' already exists.")
             confirm_overwrite = st.checkbox("Confirm Overwrite")
 
-        if st.button("🚀 Run & Save Records", type="primary"):
+        if st.button("🚀 Run", type="primary"):
             if not cat_input:
                 st.error("Model Number is required.")
             elif not filename.strip():

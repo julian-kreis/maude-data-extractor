@@ -1,8 +1,6 @@
 # MAUDE Adverse Event Fetcher
 
-This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports results to JSON, CSV, and Excel file types.
-
-streamlit run app.py
+This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports results to JSON, CSV, and Excel file types.  
 
 ---
 
@@ -38,7 +36,7 @@ pip install -r requirements.txt
 
 
 4. **Environment variables (optional)**  
-If you have an FDA API key, create a `.env` file in the project root to increase the number of daily API calls you can make:
+If you have an FDA API key, you can create a `.env` file in the project root to increase the number of daily API calls you can make:  
 
 ```
 FDA_API_KEY=your_api_key_here
@@ -49,30 +47,46 @@ FDA_API_KEY=your_api_key_here
 
 ## Use
 
-Run the retrieve script to fetch, process, and export MAUDE events:
+You can run the fetcher via the Streamlit Web Interface (recommended) or the Command Line Script.
 
+**Streamlit Web Interface (recomended)**  
+Run the following command to launch the browser-based UI:
+
+```
+streamlit run app.py
+```
+
+**Command Line**  
+Run the retrieve script directly to fetch, process, and export MAUDE events via terminal prompts:
 
 ```
 python retrieve.py
 ```
 
+---
 
-You will be prompted to:
+## Features & Options
+Whether using the UI or the script, you will have the following options:
 
-1. **Enter Model Number(s):**  
-Example: `HAR1136, TB-0009OFX`
+**Enter Model Number(s):** e.g. `HAR1136, TB-0009OFX`
 
-2. **Enter Years to Retrieve Reports From:**  
-Example: `2024, 2025`  
-Leave blank to retrieve all available years
+**Enter Year(s) to Retrieve Reports From:** e.g. `2024, 2025`
 
-3. **Deduplication Options**  
-You can choose if you want to label possible duplicate groups   
-Then you can choose if you want to merge duplicate groups into one entry
+Leave blank to retrieve all available years.
 
-4. **Export Options:**  
-You can choose to export results to JSON, CSV and/or Excel.
-You can choose the filename of your exports
+**Deduplication Options:**
+
+Label possible duplicate groups - Identifies reports likely referencing the same event.
+
+Merge duplicate groups - Combines identified duplicates into a single comprehensive entry.
+
+**Export Data as Files:** Results are automatically organized into specific folders:
+
+data_json/
+
+data_csv/
+
+data_excel/
 
 ---
 
@@ -99,32 +113,15 @@ Events identified as likely duplicates will share a `Possible Duplicate Group` n
 
 ## Configurable Constants
 
+These values are defined in `retrieve.py` and can be adjusted to change the behavior of the data processing and storage:
+
 | Constant | Description | Default |
 |----------|------------|---------|
 | `BATCH_SIZE` | Number of entries to retrieve per API call (max 1000) | 999 |
 | `SHORT_DESCRIPTION_LENGTH` | Max characters of description to use for duplicate detection | 1000 |
 | `TRAINING_SAMPLE_SIZE` | Number of entries used to train the dedupe model | 1000 |
-
----
-
-### Example Workflow
-
-1. Activate the environment:  
-
-```
-venv\Scripts\activate
-```
-
-
-2. Run the script:  
-
-```
-python retrieve.py
-```
-
-
-3. Enter the model numbers and years.
-
-4. Choose whether or not to label possible events, and whether or not to merge them
-
-5. Export results to JSON/CSV/Excel.
+| `EVENT_SEVERITY` |	Priority mapping used when merging duplicates (keeps the most severe type) | Death > Injury > Malfunction > Other
+| `EMPTY_FIELD` |	The placeholder string used for missing data in reports |	"N/A"
+| `JSON_FOLDER` |	Directory where JSON exports are saved | "data_json"
+| `CSV_FOLDER` |	Directory where CSV exports are saved | "data_csv"
+| `EXCEL_FOLDER` |	Directory where Excel exports are saved | "data_excel"
