@@ -40,6 +40,22 @@ def get_file_size_info(filepath):
     else:
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
+# Popup Deletion Confirmation Dialog ---
+@st.dialog("Confirm Deletion")
+def confirm_delete_dialog(filename, paths):
+    st.write(f"Are you sure you want to delete **{filename}**?")
+    st.write("This will remove the JSON, CSV, and Excel versions permanently.")
+    
+    col1, col2 = st.columns(2)
+    if col1.button("Yes, Delete", type="primary", use_container_width=True):
+        for path in paths:
+            if os.path.exists(path):
+                os.remove(path)
+        st.rerun() # This closes the dialog and refreshes the file list
+        
+    if col2.button("Cancel", use_container_width=True):
+        st.rerun() # This simply closes the dialog
+
 # --- UI Configuration ---
 st.set_page_config(page_title="MAUDE Data Extractor", page_icon="🏥", layout="wide")
 
@@ -89,18 +105,16 @@ def main():
             if not cat_input:
                 st.error("Model Number is required.")
             elif not filename.strip():
-                st.error("Please provide a filename before exporting.")
+                st.error("Please provide a filename.")
             elif file_exists and not confirm_overwrite:
-                st.error("Please confirm overwrite to proceed.")
+                st.error("Please confirm overwrite.")
             else:
                 run_search_logic(cat_input, year_input, do_dedupe, do_merge, filename.strip(), api_key)
-                st.rerun()
 
     st.divider()
 
     # --- Section 2: Manage Records ---
     st.header("Manage Records")
-    
     json_files = get_json_files()
     
     if not json_files:
@@ -109,22 +123,19 @@ def main():
         h_col1, h_col2, h_col3 = st.columns([2, 4, 1])
         h_col1.write("**Stored Record Name**")
         h_col2.write("**Downloads**")
-        h_col3.write("**Delete**")
+        h_col3.write("**Action**")
 
         for f in json_files:
             col1, col2, col3 = st.columns([2, 4, 1])
-            
-            # Clean name (strip .json)
             clean_name = f.replace(".json", "")
             
-            # Define paths for all three formats
             json_path = os.path.join(JSON_FOLDER, f)
             csv_path = os.path.join(CSV_FOLDER, f.replace(".json", ".csv"))
             xlsx_path = os.path.join(EXCEL_FOLDER, f.replace(".json", ".xlsx"))
 
-            # Display the clean name
             col1.markdown(f"**{clean_name}**")
 
+            # Download Buttons
             try:
                 btn_json, btn_csv, btn_xlsx = col2.columns(3)
 
@@ -167,14 +178,9 @@ def main():
             except Exception as e:
                 col2.error("Error accessing files")
 
-            # Delete logic deletes file from all three folders
-            with col3.popover("🗑️"):
-                st.write(f"Delete '{clean_name}' from records?")
-                if st.button("Confirm Delete", key=f"del_{f}", type="primary"):
-                    for path in [json_path, csv_path, xlsx_path]:
-                        if os.path.exists(path):
-                            os.remove(path)
-                    st.rerun()
+            # --- POPUP TRIGGER ---
+            if col3.button("🗑️", key=f"btn_pop_{f}", help="Delete this record"):
+                confirm_delete_dialog(clean_name, [json_path, csv_path, xlsx_path])
 
 def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, api_key):
     cat_list = [c.strip() for c in cat_list_str.split(",") if c.strip()]
@@ -185,7 +191,7 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
     
     # Progress bars and logic
     progress_bar = st.progress(0)
-    steps = len(cat_list) + (1 if do_dedupe else 0) + (1 if do_merge else 0) + 3 # +3 for the 3 exports
+    steps = len(cat_list) + (1 if do_dedupe else 0) + (1 if do_dedupe and do_merge else 0) + 3 # +3 for the 3 exports
     current_step = 0
 
     for cat in cat_list:
@@ -198,11 +204,12 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
 
     if all_processed_results:
         if do_dedupe:
-            status_text.text("Cleaning duplicates...")
+            status_text.text("Marking likely duplicate groups...")
             all_processed_results = run_deduplication(all_processed_results)
             current_step += 1
             progress_bar.progress(current_step / steps)
             if do_merge:
+                status_text.text("Merging duplicate groups...")
                 all_processed_results = merge_duplicate_groups(all_processed_results)
                 current_step += 1
                 progress_bar.progress(current_step / steps)
@@ -224,7 +231,7 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
         progress_bar.progress(current_step / steps)
 
         status_text.empty()
-        st.success(f"Successfully archived '{filename}' in JSON, CSV, and Excel formats.")
+        st.success(f"Successfully saved '{filename}' in JSON, CSV, and Excel formats.")
     else:
         status_text.empty()
         st.warning("No results found.")
