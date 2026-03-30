@@ -24,6 +24,10 @@ EVENT_SEVERITY = {"Other": 0, "Malfunction": 1, "Injury": 2, "Death": 3}
 # String to replace empty fields with
 EMPTY_FIELD = "N/A"
 
+# String to put between values in lists.
+# Do not use strings such as ", " which are seen in single problem code strings in the MAUDE Database
+LIST_STR = "; "
+
 # Folder names for where exported data is stored
 JSON_FOLDER = "data_json"
 CSV_FOLDER = "data_csv"
@@ -102,7 +106,7 @@ def process_event_data(event, mod_num):
 
     # Get all product problems
     product_problems = event.get("product_problems", [])
-    product_problems_str = "; ".join([p for p in product_problems if p is not None]) if product_problems else EMPTY_FIELD
+    product_problems_str = LIST_STR.join([p for p in product_problems if p is not None]) if product_problems else EMPTY_FIELD
 
     # Get all patient problems
     patients = event.get("patient", [])
@@ -110,7 +114,7 @@ def process_event_data(event, mod_num):
     for p in patients:
         problems = p.get("patient_problems", [])
         patient_problems.extend(problems)
-    patient_problems_str = "; ".join(filter(None, patient_problems)) if patient_problems else EMPTY_FIELD
+    patient_problems_str = LIST_STR.join(filter(None, patient_problems)) if patient_problems else EMPTY_FIELD
 
     return {
         "Model Number": mod_num,
@@ -241,10 +245,10 @@ def merge_duplicate_groups(data_list):
 
             # --- Union Problem Sets (Helper logic) ---
             for field in ["Product Problems", "Patient Problems"]:
-                base_vals = set(str(base.get(field, "")).split("; "))
-                other_vals = set(str(other.get(field, "")).split("; "))
+                base_vals = set(str(base.get(field, "")).split(LIST_STR))
+                other_vals = set(str(other.get(field, "")).split(LIST_STR))
                 combined = sorted({p for p in base_vals | other_vals if p and p != EMPTY_FIELD})
-                base[field] = "; ".join(combined) if combined else EMPTY_FIELD
+                base[field] = LIST_STR.join(combined) if combined else EMPTY_FIELD
 
             # --- Severity Check ---
             base_sev = EVENT_SEVERITY.get(base.get("Type of Event", "Other"), 0)

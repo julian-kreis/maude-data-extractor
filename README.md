@@ -129,3 +129,4 @@ These values are defined in `retrieve.py` and can be adjusted to change the beha
 | `JSON_FOLDER` |	Directory where JSON exports are saved | "data_json"
 | `CSV_FOLDER` |	Directory where CSV exports are saved | "data_csv"
 | `EXCEL_FOLDER` |	Directory where Excel exports are saved | "data_excel"
+| `LIST_STR` | String to put between values in lists | "; "
