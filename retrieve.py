@@ -258,7 +258,7 @@ def export_to_csv(data, filename="maude_export.csv"):
         print("No data to export.")
         return
 
-    export_dir = "csv_exports"
+    export_dir = "data_csv_exports"
     os.makedirs(export_dir, exist_ok=True)
 
     filepath = os.path.join(export_dir, filename)
@@ -289,7 +289,7 @@ def export_to_excel(data, filename="maude_export.xlsx"):
         print("No data to export.")
         return
 
-    export_dir = "excel_exports"
+    export_dir = "data_excel_exports"
     os.makedirs(export_dir, exist_ok=True)
 
     filepath = os.path.join(export_dir, filename)
