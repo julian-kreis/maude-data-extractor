@@ -2,6 +2,8 @@
 
 This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports results to JSON, CSV, and Excel file types.
 
+streamlit run app.py
+
 ---
 
 ## Setup
