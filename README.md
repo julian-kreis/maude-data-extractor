@@ -103,11 +103,15 @@ Events identified as likely duplicates will share a `Possible Duplicate Group` n
   - `maude_dedupe_settings` → Stores the trained dedupe model  
   - `maude_dedupe_training.json` → Stores labeled training examples  
 
-**Notes:**
+**To retrain the dedupe model**
 
-- `SHORT_DESCRIPTION_LENGTH` controls how many characters of the event description are used for duplicate detection. Higher values increase accuracy but may slow processing.
-- `TRAINING_SAMPLE_SIZE` controls the number of records used for training.
-- **To retrain the dedupe model**, delete both `maude_dedupe_settings` and `maude_dedupe_training.json` before rerunning the script. When training the dedupe model, it is recomended to use as broad of a dataset as possible.  
+- Delete both `maude_dedupe_settings` and `maude_dedupe_training.json` before rerunning the script  
+- Run the program like usual, make sure to choose to `mark duplicate groups`  
+- The dataset used for training will use the records you pulled in this run. When training the dedupe model, it is recomended to use as broad of a dataset as possible  
+- In the command line, the program will take some time to prepare the data and then will prompt you with two records from the data at a time, asking if they are duplicate records of the same event  
+- You may continue marking records until you believe you have created sufficient training data  
+- Once you mark the training as finished, new `maude_dedupe_settings` and `maude_dedupe_training.json` files will be created  
+Note: You may modify the `SHORT_DESCRIPTION_LENGTH` and `TRAINING_SAMPLE_SIZE` constants to change the max amount of sample data used when training  
 
 ---
 
