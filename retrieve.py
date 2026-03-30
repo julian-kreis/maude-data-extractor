@@ -21,6 +21,14 @@ TRAINING_SAMPLE_SIZE = 1000
 # Priority of event to keep when merging duplicate groups into one entry
 EVENT_SEVERITY = {"Other": 0, "Malfunction": 1, "Injury": 2, "Death": 3}
 
+# String to replace empty fields with
+EMPTY_FIELD = "N/A"
+
+# Folder names for where exported data is stored
+JSON_FOLDER = "data_json"
+CSV_FOLDER = "data_csv"
+EXCEL_FOLDER = "data_excel"
+
 def fetch_maude_events(model_number, year_filter=None, api_key=None, limit=BATCH_SIZE):
     """Fetches ALL MAUDE adverse event reports using pagination."""
     base_url = "https://api.fda.gov/device/event.json"
@@ -83,18 +91,18 @@ def process_event_data(event, mod_num):
         for t in mdr_text_list
         if t.get("text") and t.get("text_type_code") == "Description of Event or Problem"
     ]
-    description = " ".join(description_texts) if description_texts else "N/A"
+    description = " ".join(description_texts) if description_texts else EMPTY_FIELD
 
     manufacturer_narrative_texts = [
         t.get("text", "")
         for t in mdr_text_list
         if t.get("text") and t.get("text_type_code") == "Additional Manufacturer Narrative"
     ]
-    manufacturer_narrative = " ".join(manufacturer_narrative_texts) if manufacturer_narrative_texts else "N/A"
+    manufacturer_narrative = " ".join(manufacturer_narrative_texts) if manufacturer_narrative_texts else EMPTY_FIELD
 
     # Get all product problems
     product_problems = event.get("product_problems", [])
-    product_problems_str = "; ".join([p for p in product_problems if p is not None]) if product_problems else "N/A"
+    product_problems_str = "; ".join([p for p in product_problems if p is not None]) if product_problems else EMPTY_FIELD
 
     # Get all patient problems
     patients = event.get("patient", [])
@@ -102,16 +110,16 @@ def process_event_data(event, mod_num):
     for p in patients:
         problems = p.get("patient_problems", [])
         patient_problems.extend(problems)
-    patient_problems_str = "; ".join(filter(None, patient_problems)) if patient_problems else "N/A"
+    patient_problems_str = "; ".join(filter(None, patient_problems)) if patient_problems else EMPTY_FIELD
 
     return {
         "Model Number": mod_num,
         "MDR Report Key": event.get("mdr_report_key", ""),
-        "Brand Name": device_info.get("brand_name", "N/A"),
-        "Manufacturer": device_info.get("manufacturer_d_name", "N/A"),
-        "Lot Number": device_info.get("lot_number", "N/A"),
-        "Date of Event": event.get("date_of_event", "N/A"),
-        "Type of Event": event.get("event_type", "N/A"),
+        "Brand Name": device_info.get("brand_name", EMPTY_FIELD),
+        "Manufacturer": device_info.get("manufacturer_d_name", EMPTY_FIELD),
+        "Lot Number": device_info.get("lot_number", EMPTY_FIELD),
+        "Date of Event": event.get("date_of_event", EMPTY_FIELD),
+        "Type of Event": event.get("event_type", EMPTY_FIELD),
         "Product Problems": product_problems_str,
         "Patient Problems": patient_problems_str,
         "Description": description,
@@ -126,7 +134,7 @@ def run_deduplication(data_list):
     def normalize_record(record):
         cleaned = {}
         for k, v in record.items():
-            if v in ["", "N/A", "UNKNOWN", None]:
+            if v in ["", EMPTY_FIELD, None]:
                 cleaned[k] = None
             else:
                 cleaned[k] = v
@@ -228,15 +236,15 @@ def merge_duplicate_groups(data_list):
 
             # --- Fill other missing fields ---
             for k, v in other.items():
-                if base.get(k) in ["", "N/A", None] and v not in ["", "N/A", None]:
+                if base.get(k) in ["", EMPTY_FIELD, None] and v not in ["", EMPTY_FIELD, None]:
                     base[k] = v
 
             # --- Union Problem Sets (Helper logic) ---
             for field in ["Product Problems", "Patient Problems"]:
                 base_vals = set(str(base.get(field, "")).split("; "))
                 other_vals = set(str(other.get(field, "")).split("; "))
-                combined = sorted({p for p in base_vals | other_vals if p and p != "N/A"})
-                base[field] = "; ".join(combined) if combined else "N/A"
+                combined = sorted({p for p in base_vals | other_vals if p and p != EMPTY_FIELD})
+                base[field] = "; ".join(combined) if combined else EMPTY_FIELD
 
             # --- Severity Check ---
             base_sev = EVENT_SEVERITY.get(base.get("Type of Event", "Other"), 0)
@@ -259,7 +267,7 @@ def export_to_json(data, filename="maude_export.json"):
         print("No data to export.")
         return
 
-    export_dir = "data_json"
+    export_dir = JSON_FOLDER
     os.makedirs(export_dir, exist_ok=True)
 
     filepath = os.path.join(export_dir, filename)
@@ -277,7 +285,7 @@ def export_to_csv(data, filename="maude_export.csv"):
         print("No data to export.")
         return
 
-    export_dir = "data_csv"
+    export_dir = CSV_FOLDER
     os.makedirs(export_dir, exist_ok=True)
 
     filepath = os.path.join(export_dir, filename)
@@ -308,7 +316,7 @@ def export_to_excel(data, filename="maude_export.xlsx"):
         print("No data to export.")
         return
 
-    export_dir = "data_excel"
+    export_dir = EXCEL_FOLDER
     os.makedirs(export_dir, exist_ok=True)
 
     filepath = os.path.join(export_dir, filename)
