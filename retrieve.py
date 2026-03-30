@@ -83,7 +83,7 @@ def process_event_data(event, mod_num):
         for t in mdr_text_list
         if t.get("text") and t.get("text_type_code") == "Description of Event or Problem"
     ]
-    description = " ".join(description_texts)
+    description = " ".join(description_texts) if description_texts else "N/A"
 
     manufacturer_narrative_texts = [
         t.get("text", "")
@@ -371,7 +371,7 @@ if __name__ == "__main__":
 
         excel_choice = input("\nWould you like to export to Excel? (y/n): ").lower().strip()
 
-        if csv_choice == 'y' or excel_choice == 'y':
+        if 'y' in [csv_choice, excel_choice, json_choice]:
             filename = input("\nEnter your desired filename: ").strip() or "maude_export"
 
             if json_choice == 'y':

@@ -1,6 +1,6 @@
 # MAUDE Adverse Event Fetcher
 
-This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports results to CSV or Excel.
+This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports results to JSON, CSV, and Excel file types.
 
 ---
 
@@ -47,11 +47,11 @@ FDA_API_KEY=your_api_key_here
 
 ## Use
 
-Run the main script to fetch, process, and export MAUDE events:
+Run the retrieve script to fetch, process, and export MAUDE events:
 
 
 ```
-python main.py
+python retrieve.py
 ```
 
 
@@ -69,7 +69,8 @@ You can choose if you want to label possible duplicate groups
 Then you can choose if you want to merge duplicate groups into one entry
 
 4. **Export Options:**  
-You can choose to export results to CSV and/or Excel.
+You can choose to export results to JSON, CSV and/or Excel.
+You can choose the filename of your exports
 
 ---
 
@@ -116,7 +117,7 @@ venv\Scripts\activate
 2. Run the script:  
 
 ```
-python main.py
+python retrieve.py
 ```
 
 
@@ -124,4 +125,4 @@ python main.py
 
 4. Choose whether or not to label possible events, and whether or not to merge them
 
-5. Export results to CSV/Excel.
+5. Export results to JSON/CSV/Excel.
