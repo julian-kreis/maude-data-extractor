@@ -73,6 +73,15 @@ def summarize_mdr_incidents(data):
                 summary[prob_type][p][model] = summary[prob_type][p].get(model, 0) + 1
                 summary[prob_type][p]["total"] += 1
 
+        # Sort Product Problems and Patient Problems by the "Total" value inside each problem dict
+        summary["Product problems"] = dict(
+            sorted(summary["Product problems"].items(), key=lambda item: item[1]["total"], reverse=True)
+        )
+
+        summary["Patient problems"] = dict(
+            sorted(summary["Patient problems"].items(), key=lambda item: item[1]["total"], reverse=True)
+        )
+
     # Finalize Metadata
     summary["list of models"] = sorted(list(models_set))
     if dates:
