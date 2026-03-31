@@ -16,10 +16,20 @@ from retrieve import (
     EXCEL_FOLDER
 )
 
+# Importing functions AND folder constants from analyze
+from analyze import (
+    summarize_mdr_incidents,
+    write_summary_to_xlsx_file,
+    write_summary_to_json_file,
+    FILENAME_END_TEXT,
+    JSON_ANALYSIS_FOLDER,
+    XSLX_ANALYSIS_FOLDER
+)
+
 load_dotenv()
 
 # --- Utility: Ensure Folders Exist ---
-for folder in [JSON_FOLDER, CSV_FOLDER, EXCEL_FOLDER]:
+for folder in [JSON_FOLDER, CSV_FOLDER, EXCEL_FOLDER, JSON_ANALYSIS_FOLDER, XSLX_ANALYSIS_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
 # --- Helper Functions ---
@@ -46,7 +56,7 @@ def rename_file_dialog(old_name, paths):
     st.write(f"Enter a new name for **{old_name}**:")
     new_name = st.text_input("New Name", value=old_name).strip()
     
-    st.info("This will rename all associated files (JSON, CSV, and Excel).")
+    st.info("This will rename all associated files (JSON, CSV, Excel, and Analysis Summaries).")
 
     col1, col2 = st.columns(2)
     if col1.button("Save Changes", type="primary", use_container_width=True):
@@ -61,7 +71,12 @@ def rename_file_dialog(old_name, paths):
                         # Split path to keep directory and extension, but change filename
                         directory = os.path.dirname(old_path)
                         extension = os.path.splitext(old_path)[1]
-                        new_path = os.path.join(directory, f"{new_name}{extension}")
+                        
+                        # Preserve the suffix for analysis files
+                        if FILENAME_END_TEXT in os.path.basename(old_path):
+                            new_path = os.path.join(directory, f"{new_name}{FILENAME_END_TEXT}{extension}")
+                        else:
+                            new_path = os.path.join(directory, f"{new_name}{extension}")
                         
                         os.rename(old_path, new_path)
                 st.rerun()
@@ -74,7 +89,7 @@ def rename_file_dialog(old_name, paths):
 @st.dialog("Confirm Deletion")
 def confirm_delete_dialog(filename, paths):
     st.write(f"Are you sure you want to delete **{filename}**?")
-    st.write("This will remove the JSON, CSV, and Excel versions permanently.")
+    st.write("This will remove the JSON, CSV, Excel, and Analysis summary versions permanently.")
     
     col1, col2 = st.columns(2)
     if col1.button("Yes, Delete", type="primary", use_container_width=True):
@@ -150,27 +165,32 @@ def main():
     if not json_files:
         st.info("No saved records found.")
     else:
-        h_col1, h_col2, h_col3 = st.columns([2, 4, 1])
+        # Adjusted column widths to accommodate 5 download buttons
+        h_col1, h_col2, h_col3 = st.columns([2, 5, 1])
         h_col1.write("**Stored Record Name**")
         h_col2.write("**Downloads**")
         h_col3.write("**Actions**")
 
         for f in json_files:
-            col1, col2, col3 = st.columns([2, 4, 1])
+            col1, col2, col3 = st.columns([2, 5, 1])
             clean_name = f.replace(".json", "")
             
             json_path = os.path.join(JSON_FOLDER, f)
             csv_path = os.path.join(CSV_FOLDER, f.replace(".json", ".csv"))
             xlsx_path = os.path.join(EXCEL_FOLDER, f.replace(".json", ".xlsx"))
+            
+            # Analysis Paths
+            sum_json_path = os.path.join(JSON_ANALYSIS_FOLDER, f"{clean_name}{FILENAME_END_TEXT}.json")
+            sum_xlsx_path = os.path.join(XSLX_ANALYSIS_FOLDER, f"{clean_name}{FILENAME_END_TEXT}.xlsx")
 
             # Group them for the dialogs
-            file_paths = [json_path, csv_path, xlsx_path]
+            file_paths = [json_path, csv_path, xlsx_path, sum_json_path, sum_xlsx_path]
 
             col1.markdown(f"**{clean_name}**")
 
             # Download Buttons
             try:
-                btn_json, btn_csv, btn_xlsx = col2.columns(3)
+                btn_json, btn_csv, btn_xlsx, btn_sum_json, btn_sum_xlsx = col2.columns(5)
 
                 # JSON Download
                 json_size = get_file_size_info(json_path)
@@ -179,7 +199,8 @@ def main():
                     data=open(json_path, "rb"),
                     file_name=f,
                     mime="application/json",
-                    key=f"dl_json_{f}"
+                    key=f"dl_json_{f}",
+                    help="Raw JSON"
                 )
 
                 # CSV Download
@@ -190,7 +211,8 @@ def main():
                         data=open(csv_path, "rb"),
                         file_name=f.replace(".json", ".csv"),
                         mime="text/csv",
-                        key=f"dl_csv_{f}"
+                        key=f"dl_csv_{f}",
+                        help="Raw CSV"
                     )
                 else:
                     btn_csv.button("CSV N/A", disabled=True, key=f"dl_csv_na_{f}")
@@ -203,11 +225,40 @@ def main():
                         data=open(xlsx_path, "rb"),
                         file_name=f.replace(".json", ".xlsx"),
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"dl_xlsx_{f}"
+                        key=f"dl_xlsx_{f}",
+                        help="Raw Excel"
                     )
                 else:
                     btn_xlsx.button("Excel N/A", disabled=True, key=f"dl_xlsx_na_{f}")
-            
+
+                # Summary JSON Download
+                sum_json_size = get_file_size_info(sum_json_path)
+                if os.path.exists(sum_json_path):
+                    btn_sum_json.download_button(
+                        f"Sum JSON ({sum_json_size})",
+                        data=open(sum_json_path, "rb"),
+                        file_name=f"{clean_name}{FILENAME_END_TEXT}.json",
+                        mime="application/json",
+                        key=f"dl_sum_json_{f}",
+                        help="Analysis Summary JSON"
+                    )
+                else:
+                    btn_sum_json.button("Sum JSON N/A", disabled=True, key=f"dl_sum_json_na_{f}")
+
+                # Summary Excel Download
+                sum_xlsx_size = get_file_size_info(sum_xlsx_path)
+                if os.path.exists(sum_xlsx_path):
+                    btn_sum_xlsx.download_button(
+                        f"Sum Excel ({sum_xlsx_size})",
+                        data=open(sum_xlsx_path, "rb"),
+                        file_name=f"{clean_name}{FILENAME_END_TEXT}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key=f"dl_sum_xlsx_{f}",
+                        help="Analysis Summary Excel"
+                    )
+                else:
+                    btn_sum_xlsx.button("Sum Excel N/A", disabled=True, key=f"dl_sum_xlsx_na_{f}")
+
             except Exception as e:
                 col2.error("Error accessing files")
 
@@ -229,7 +280,7 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
     
     # Progress bars and logic
     progress_bar = st.progress(0)
-    steps = len(cat_list) + (1 if do_dedupe else 0) + (1 if do_dedupe and do_merge else 0) + 3 # +3 for the 3 exports
+    steps = len(cat_list) + (1 if do_dedupe else 0) + (1 if do_dedupe and do_merge else 0) + 5 # +5 for data files and analysis files
     current_step = 0
 
     for cat in cat_list:
@@ -252,7 +303,7 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
                 current_step += 1
                 progress_bar.progress(current_step / steps)
 
-        # SAVE ALL THREE FORMATS
+        # SAVE RAW FORMATS
         status_text.text("Saving JSON...")
         export_to_json(all_processed_results, f"{filename}.json")
         current_step += 1
@@ -268,8 +319,22 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
         current_step += 1
         progress_bar.progress(current_step / steps)
 
+        # GENERATE AND SAVE ANALYSIS SUMMARIES
+        status_text.text("Generating Analysis Summaries...")
+        summary_obj = summarize_mdr_incidents(all_processed_results)
+        
+        status_text.text("Saving Analysis JSON...")
+        write_summary_to_json_file(summary_obj, os.path.join(JSON_ANALYSIS_FOLDER, f"{filename}{FILENAME_END_TEXT}.json"))
+        current_step += 1
+        progress_bar.progress(current_step / steps)
+
+        status_text.text("Saving Analysis Excel...")
+        write_summary_to_xlsx_file(summary_obj, os.path.join(XSLX_ANALYSIS_FOLDER, f"{filename}{FILENAME_END_TEXT}.xlsx"))
+        current_step += 1
+        progress_bar.progress(current_step / steps)
+
         status_text.empty()
-        st.success(f"Successfully saved '{filename}' in JSON, CSV, and Excel formats.")
+        st.success(f"Successfully saved '{filename}' raw files and analysis summaries.")
     else:
         status_text.empty()
         st.warning("No results found.")
