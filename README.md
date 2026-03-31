@@ -126,7 +126,7 @@ These values are defined in `retrieve.py` and can be adjusted to change the beha
 | `TRAINING_SAMPLE_SIZE` | Number of entries used to train the dedupe model | 1000 |
 | `EVENT_SEVERITY` |	Priority mapping used when merging duplicates (keeps the most severe type) | Death > Injury > Malfunction > Other
 | `EMPTY_FIELD` |	The placeholder string used for missing data in reports |	"N/A"
+| `LIST_STR` | String to put between values in lists | "; "
 | `JSON_FOLDER` |	Directory where JSON exports are saved | "data_json"
 | `CSV_FOLDER` |	Directory where CSV exports are saved | "data_csv"
 | `EXCEL_FOLDER` |	Directory where Excel exports are saved | "data_excel"
-| `LIST_STR` | String to put between values in lists | "; "

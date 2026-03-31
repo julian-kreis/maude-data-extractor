@@ -40,7 +40,37 @@ def get_file_size_info(filepath):
     else:
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
-# Popup Deletion Confirmation Dialog ---
+# --- Popup Dialogs ---
+@st.dialog("Rename Record")
+def rename_file_dialog(old_name, paths):
+    st.write(f"Enter a new name for **{old_name}**:")
+    new_name = st.text_input("New Name", value=old_name).strip()
+    
+    st.info("This will rename all associated files (JSON, CSV, and Excel).")
+
+    col1, col2 = st.columns(2)
+    if col1.button("Save Changes", type="primary", use_container_width=True):
+        if not new_name:
+            st.error("Name cannot be empty.")
+        elif new_name == old_name:
+            st.rerun()
+        else:
+            try:
+                for old_path in paths:
+                    if os.path.exists(old_path):
+                        # Split path to keep directory and extension, but change filename
+                        directory = os.path.dirname(old_path)
+                        extension = os.path.splitext(old_path)[1]
+                        new_path = os.path.join(directory, f"{new_name}{extension}")
+                        
+                        os.rename(old_path, new_path)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error renaming files: {e}")
+        
+    if col2.button("Cancel", use_container_width=True):
+        st.rerun()
+
 @st.dialog("Confirm Deletion")
 def confirm_delete_dialog(filename, paths):
     st.write(f"Are you sure you want to delete **{filename}**?")
@@ -123,7 +153,7 @@ def main():
         h_col1, h_col2, h_col3 = st.columns([2, 4, 1])
         h_col1.write("**Stored Record Name**")
         h_col2.write("**Downloads**")
-        h_col3.write("**Action**")
+        h_col3.write("**Actions**")
 
         for f in json_files:
             col1, col2, col3 = st.columns([2, 4, 1])
@@ -132,6 +162,9 @@ def main():
             json_path = os.path.join(JSON_FOLDER, f)
             csv_path = os.path.join(CSV_FOLDER, f.replace(".json", ".csv"))
             xlsx_path = os.path.join(EXCEL_FOLDER, f.replace(".json", ".xlsx"))
+
+            # Group them for the dialogs
+            file_paths = [json_path, csv_path, xlsx_path]
 
             col1.markdown(f"**{clean_name}**")
 
@@ -178,9 +211,14 @@ def main():
             except Exception as e:
                 col2.error("Error accessing files")
 
-            # --- POPUP TRIGGER ---
-            if col3.button("🗑️", key=f"btn_pop_{f}", help="Delete this record"):
-                confirm_delete_dialog(clean_name, [json_path, csv_path, xlsx_path])
+            # --- Action Buttons ---
+            act_col1, act_col2 = col3.columns(2)
+            
+            if act_col1.button("✏️", key=f"btn_edit_{f}", help="Rename this record"):
+                rename_file_dialog(clean_name, file_paths)
+
+            if act_col2.button("🗑️", key=f"btn_del_{f}", help="Delete this record"):
+                confirm_delete_dialog(clean_name, file_paths)
 
 def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, api_key):
     cat_list = [c.strip() for c in cat_list_str.split(",") if c.strip()]
