@@ -143,4 +143,4 @@ These values are defined in `analyze.py` and can be adjusted to change the behav
 |----------|------------|---------|
 | `FILENAME_END_TEXT` | Added to the filename of all files generated with with analyze.py | "_summary" |
 | `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved | "analysis_json" |
-| `TXT_ANALYSIS_FOLDER` | Directory where text exports are saved | "analysis_txt" |
+| `XLSX_ANALYSIS_FOLDER` | Directory where Excel summaries are saved | "analysis_txt" |
