@@ -1,4 +1,4 @@
-# MAUDE Adverse Event Fetcher
+# MAUDE Data Extractor
 
 This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports results to JSON, CSV, and Excel file types.  
 
@@ -61,6 +61,12 @@ Run the retrieve script directly to fetch, process, and export MAUDE events via 
 
 ```
 python retrieve.py
+```
+
+Run the analyze script directly to create summary files for all data json files:
+
+```
+python analyze.py
 ```
 
 ---
@@ -130,3 +136,11 @@ These values are defined in `retrieve.py` and can be adjusted to change the beha
 | `JSON_FOLDER` |	Directory where JSON exports are saved | "data_json"
 | `CSV_FOLDER` |	Directory where CSV exports are saved | "data_csv"
 | `EXCEL_FOLDER` |	Directory where Excel exports are saved | "data_excel"
+
+These values are defined in `analyze.py` and can be adjusted to change the behavior of the data processing and storage:
+
+| Constant | Description | Default |
+|----------|------------|---------|
+| `FILENAME_END_TEXT` | Added to the filename of all files generated with with analyze.py | "_summary" |
+| `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved | "analysis_json" |
+| `TXT_ANALYSIS_FOLDER` | Directory where text exports are saved | "analysis_txt" |

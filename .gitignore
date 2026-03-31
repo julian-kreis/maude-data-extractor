@@ -215,4 +215,5 @@ venv/
 data_json/
 data_csv/
 data_excel/
-analysis_txt/
+analysis_json/
+analysis_excel/
