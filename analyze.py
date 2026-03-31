@@ -7,7 +7,8 @@ import pandas as pd
 import json
 from retrieve import (
     JSON_FOLDER,
-    LIST_STR
+    LIST_STR,
+    EMPTY_FIELD
 )
 
 # Text that is added onto the end of the filename
@@ -85,8 +86,9 @@ def summarize_mdr_incidents(data):
     # Finalize Metadata
     summary["list of models"] = sorted(list(models_set))
     if dates:
-        summary["earliest incident date"] = min(dates)
-        summary["latest incident date"] = max(dates)
+        valid_dates = [d for d in dates if d and d != EMPTY_FIELD]
+    summary["earliest incident date"] = min(valid_dates) if valid_dates else "18000101"
+    summary["latest incident date"] = max(valid_dates) if valid_dates else "18000101"
 
     return summary
 
