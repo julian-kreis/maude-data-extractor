@@ -342,4 +342,10 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
         st.warning("No results found.")
 
 if __name__ == "__main__":
-    main()
+    # Create pages
+    home_page = st.Page(main, title="Home", icon="🏠")
+    analysis_page = st.Page("pages/analysis.py", title="Data Analysis", icon="📈")
+    comparison_page = st.Page("pages/comparison.py", title="Data Comparision", icon="📊")
+
+    pg = st.navigation([home_page, analysis_page, comparison_page])
+    pg.run()
