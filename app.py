@@ -165,14 +165,15 @@ def main():
     if not json_files:
         st.info("No saved records found.")
     else:
-        # Adjusted column widths to accommodate 5 download buttons
-        h_col1, h_col2, h_col3 = st.columns([2, 5, 1])
+        # Column headers
+        h_col1, h_col2, h_col3, h_col4 = st.columns([2, 3, 2, 1])
         h_col1.write("**Stored Record Name**")
-        h_col2.write("**Downloads**")
-        h_col3.write("**Actions**")
+        h_col2.write("**Data Downloads**")
+        h_col3.write("**Summary Downloads**")
+        h_col4.write("**Actions**")
 
         for f in json_files:
-            col1, col2, col3 = st.columns([2, 5, 1])
+            col1, col2, col3, col4 = st.columns([2, 3, 2, 1])
             clean_name = f.replace(".json", "")
             
             json_path = os.path.join(JSON_FOLDER, f)
@@ -190,7 +191,8 @@ def main():
 
             # Download Buttons
             try:
-                btn_json, btn_csv, btn_xlsx, btn_sum_json, btn_sum_xlsx = col2.columns(5)
+                btn_json, btn_csv, btn_xlsx = col2.columns(3)
+                btn_sum_json, btn_sum_xlsx = col3.columns(2)
 
                 # JSON Download
                 json_size = get_file_size_info(json_path)
@@ -235,7 +237,7 @@ def main():
                 sum_json_size = get_file_size_info(sum_json_path)
                 if os.path.exists(sum_json_path):
                     btn_sum_json.download_button(
-                        f"Sum JSON ({sum_json_size})",
+                        f"JSON ({sum_json_size})",
                         data=open(sum_json_path, "rb"),
                         file_name=f"{clean_name}{FILENAME_END_TEXT}.json",
                         mime="application/json",
@@ -243,13 +245,13 @@ def main():
                         help="Analysis Summary JSON"
                     )
                 else:
-                    btn_sum_json.button("Sum JSON N/A", disabled=True, key=f"dl_sum_json_na_{f}")
+                    btn_sum_json.button("JSON N/A", disabled=True, key=f"dl_sum_json_na_{f}")
 
                 # Summary Excel Download
                 sum_xlsx_size = get_file_size_info(sum_xlsx_path)
                 if os.path.exists(sum_xlsx_path):
                     btn_sum_xlsx.download_button(
-                        f"Sum Excel ({sum_xlsx_size})",
+                        f"Excel ({sum_xlsx_size})",
                         data=open(sum_xlsx_path, "rb"),
                         file_name=f"{clean_name}{FILENAME_END_TEXT}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -257,13 +259,13 @@ def main():
                         help="Analysis Summary Excel"
                     )
                 else:
-                    btn_sum_xlsx.button("Sum Excel N/A", disabled=True, key=f"dl_sum_xlsx_na_{f}")
+                    btn_sum_xlsx.button("Excel N/A", disabled=True, key=f"dl_sum_xlsx_na_{f}")
 
             except Exception as e:
                 col2.error("Error accessing files")
 
             # --- Action Buttons ---
-            act_col1, act_col2 = col3.columns(2)
+            act_col1, act_col2 = col4.columns(2)
             
             if act_col1.button("✏️", key=f"btn_edit_{f}", help="Rename this record"):
                 rename_file_dialog(clean_name, file_paths)
