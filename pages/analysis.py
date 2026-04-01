@@ -12,6 +12,7 @@ from analyze import (
 from app import get_file_size_info
 from retrieve import EMPTY_FIELD
 
+# Other label lists examples within this label, but gets truncated to this many characters
 OTHER_LABEL_MAX_CHARS = 50
 
 # Configure the page layout

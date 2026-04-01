@@ -9,6 +9,9 @@ from pages.analysis import (
     format_date
 )
 
+# Max columns per row when displaying the record names
+MAX_COLS = 4
+
 def main():
     st.sidebar.title("Comparison Selection")
     
@@ -45,19 +48,32 @@ def main():
     # --- Top Section: List of Records ---
     st.subheader("Selected Records Overview")
     
-    # Create columns dynamically based on how many records are selected for a clean top view
-    overview_cols = st.columns(len(record_names))
-    
-    for i, name in enumerate(record_names):
-        with overview_cols[i]:
-            data = records_data[name]
-            models = data.get("list of models", [])
-            start_date = format_date(data.get("earliest incident date", "N/A"))
-            end_date = format_date(data.get("latest incident date", "N/A"))
-            
-            st.markdown(f"#### {name}")
-            st.markdown(f"**Models:** {', '.join(models) if models else 'None'}")
-            st.markdown(f"**Date Range:** {start_date} to {end_date}")
+    for i in range(0, len(record_names), MAX_COLS):
+        # Get the current slice of records (e.g., 0-3, 4-7, etc.)
+        row_chunk = record_names[i : i + MAX_COLS]
+        
+        # Create columns for this specific row
+        cols = st.columns(MAX_COLS)
+        
+        for j, name in enumerate(row_chunk):
+            with cols[j]:
+                data = records_data[name]
+                models = data.get("list of models", [])
+                
+                # Using the helper from the previous fix to avoid tuple errors
+                start_raw = data.get("earliest incident date", "N/A")
+                end_raw = data.get("latest incident date", "N/A")
+                
+                start_date = format_date(start_raw)
+                end_date = format_date(end_raw)
+                
+                st.markdown(f"#### {name}")
+                st.markdown(f"**Models:** {', '.join(models) if models else 'None'}")
+                st.markdown(f"**Date Range:** {start_date} to {end_date}")
+        
+        # Add a small spacer between rows if there are more records coming
+        if i + MAX_COLS < len(record_names):
+            st.write("")
 
     st.divider()
 
