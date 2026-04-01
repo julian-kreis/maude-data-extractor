@@ -1,6 +1,6 @@
 # MAUDE Data Extractor
 
-This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports results to JSON, CSV, and Excel file types.  
+This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports data to JSON, CSV, and Excel file types. Additionally, charts of data summary can be viewed.
 
 ---
 
@@ -74,25 +74,30 @@ python analyze.py
 ## Features & Options
 Whether using the UI or the script, you will have the following options:
 
-**Enter Model Number(s):** e.g. `HAR1136, TB-0009OFX`
+**Enter Model Number(s):**
 
-**Enter Year(s) to Retrieve Reports From:** e.g. `2024, 2025`
+- Uses a comma-seprated list (e.g. `HAR1136, TB-0009OFX`)
 
-Leave blank to retrieve all available years.
+**Enter Year(s) to Retrieve Reports From:**
+
+- Uses a comma-seperated list (e.g. `2024, 2025`)
+
+- Leave blank to retrieve all available years.
 
 **Deduplication Options:**
 
-Label possible duplicate groups - Identifies reports likely referencing the same event.
+- Label possible duplicate groups - Identifies reports likely referencing the same event.
 
-Merge duplicate groups - Combines identified duplicates into a single comprehensive entry.
+- Merge duplicate groups - Combines identified duplicates into a single comprehensive entry.
 
-**Export Data as Files:** Results are automatically organized into specific folders:
+**Save Data as Files:**
 
-data_json/
+- Raw data stored as .json, .csv, .xlsx
 
-data_csv/
+- Data summaries stored as .json, .xlsx
 
-data_excel/
+   
+When using the UI, additional data visualizations of data summaries are available
 
 ---
 
@@ -144,3 +149,15 @@ These values are defined in `analyze.py` and can be adjusted to change the behav
 | `FILENAME_END_TEXT` | Added to the filename of all files generated with with analyze.py | "_summary" |
 | `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved | "analysis_json" |
 | `XLSX_ANALYSIS_FOLDER` | Directory where Excel summaries are saved | "analysis_excel" |
+
+These values are defined in `analysis.py` and can be adjusted to change the behavior of the data processing and storage:
+
+| Constant | Description | Default |
+|----------|------------|---------|
+| `OTHER_LABEL_MAX_CHARS` | In charts, the "Other" label gets truncated to this length | 50 |
+
+These values are defined in `comparison.py` and can be adjusted to change the behavior of the data processing and storage:
+
+| Constant | Description | Default |
+|----------|------------|---------|
+| `MAX_COLS` | Maximum number of records shown per row at the top of the comparison page | 4 |
