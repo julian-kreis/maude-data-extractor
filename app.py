@@ -1,8 +1,6 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-
-# Importing functions AND folder constants from retrieve
 from retrieve import (
     fetch_maude_events,
     process_event_data,
@@ -15,8 +13,6 @@ from retrieve import (
     CSV_FOLDER,
     EXCEL_FOLDER
 )
-
-# Importing functions AND folder constants from analyze
 from analyze import (
     summarize_mdr_incidents,
     write_summary_to_xlsx_file,
@@ -345,7 +341,7 @@ if __name__ == "__main__":
     # Create pages
     home_page = st.Page(main, title="Home", icon="🏠")
     analysis_page = st.Page("pages/analysis.py", title="Data Analysis", icon="📈")
-    comparison_page = st.Page("pages/comparison.py", title="Data Comparision", icon="📊")
+    comparison_page = st.Page("pages/comparison.py", title="Data Comparison", icon="📊")
 
     pg = st.navigation([home_page, analysis_page, comparison_page])
     pg.run()

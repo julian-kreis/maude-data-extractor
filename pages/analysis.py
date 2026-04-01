@@ -10,6 +10,7 @@ from analyze import (
     FILENAME_END_TEXT
 )
 from app import get_file_size_info
+from retrieve import EMPTY_FIELD
 
 OTHER_LABEL_MAX_CHARS = 50
 
@@ -25,6 +26,15 @@ XLSX_DIR = ROOT_DIR / XSLX_ANALYSIS_FOLDER
 def load_json_data(filepath):
     with open(filepath, "r") as f:
         return json.load(f)
+    
+def format_date(date_str):
+    """Formats dates in form yyyymmdd to be human-readable"""
+    if not date_str or date_str == EMPTY_FIELD:
+        return EMPTY_FIELD
+    try:
+        return datetime.strptime(date_str, "%Y%m%d").strftime("%B %d, %Y")
+    except ValueError:
+        return date_str
 
 def process_data_for_pie(data_dict, create_other_category=False):
     """
@@ -141,10 +151,8 @@ def main():
                 )
 
         models = data.get("list of models", [])
-        start_date = data.get("earliest incident date", "N/A")
-        end_date = data.get("latest incident date", "N/A")
-        start_date = datetime.strptime(start_date, "%Y%m%d").strftime("%B %d, %Y")
-        end_date = datetime.strptime(end_date, "%Y%m%d").strftime("%B %d, %Y")
+        start_date = format_date(data.get("earliest incident date"))
+        end_date = format_date(data.get("latest incident date"))
 
         st.title("Device Incident Analysis Dashboard")
         st.subheader(f"Record: {selected_file.name.removesuffix(suffix)}")
