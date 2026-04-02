@@ -1,12 +1,14 @@
 # MAUDE Data Extractor
 
-This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports data to JSON, CSV, and Excel file types. Additionally, charts of data summary can be viewed.
+This Python project fetches medical device adverse event reports from the FDA MAUDE database by device model, processes the data, and exports the processed data to JSON, CSV, and Excel file types. Additionally, summaries of data are generated in JSON and Excel file types and can be viewed graphically through the UI.
 
 ---
 
 ## Setup
 
-Requires Python 3.11 or newer.
+**Requirements:**
+
+- Python 3.11 or newer
 
 1. **Create a virtual environment**  
 
@@ -17,7 +19,7 @@ python -m venv venv
 - **macOS / Linux:**  
 
 ```
-source venv/bin/activate
+python3 -m venv venv
 ```
 
 
