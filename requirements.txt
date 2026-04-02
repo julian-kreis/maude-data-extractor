@@ -1,7 +1,14 @@
-requests
-dotenv
-pandas
-openpyxl
-dedupe
-streamlit
-plotly.express
+# HTTP and Environment
+requests==2.32.5
+python-dotenv==1.2.2
+
+# Data Processing
+pandas==2.3.3
+openpyxl==3.1.5
+
+# Data Deduplication
+dedupe==3.0.3
+
+# Frontend and Visualization
+streamlit==1.55.0
+plotly==6.6.0

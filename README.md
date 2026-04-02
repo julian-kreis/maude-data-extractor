@@ -6,10 +6,18 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 ## Setup
 
+Requires Python 3.11 or newer.
+
 1. **Create a virtual environment**  
 
 ```
 python -m venv venv
+```
+
+- **macOS / Linux:**  
+
+```
+source venv/bin/activate
 ```
 
 
