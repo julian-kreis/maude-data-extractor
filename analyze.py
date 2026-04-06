@@ -192,7 +192,7 @@ def summarize_mdr_incidents(data):
         )
 
     # Add most-used phrases
-    summary["Description phrases"] = find_common_phrases(data)
+    summary["Common phrases"] = find_common_phrases(data)
 
     # Finalize Metadata
     summary["list of models"] = sorted(list(models_set))
@@ -223,45 +223,45 @@ def write_summary_to_xlsx_file(summary, output_path):
     df_events = create_table_df(summary["type of event"], row_labels)
     df_product = create_table_df(summary["Product problems"], row_labels)
     df_patient = create_table_df(summary["Patient problems"], row_labels)
+    df_phrases = pd.DataFrame(summary["Common phrases"], columns=["Phrase", "Event count"])
 
     # Dictionary to map sheet names to their DataFrames
     sheets = {
         'Events': df_events,
         'Product Problems': df_product,
-        'Patient Problems': df_patient
+        'Patient Problems': df_patient,
+        'Common Description Phrases': df_phrases
     }
 
     # Write to sheets and change column widths automatically to improve readability
     try:
         with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
             for sheet_name, df in sheets.items():
-                df.to_excel(writer, sheet_name=sheet_name)
+                include_index = (sheet_name != 'Common Description Phrases')
+
+                df.to_excel(writer, sheet_name=sheet_name, index=include_index)
                 
                 # Access the openpyxl worksheet object
                 worksheet = writer.sheets[sheet_name]
 
-                # Insert the title into the top left cell
-                worksheet['A1'] = sheet_name
-                worksheet['A1'].font = Font(bold=True)
-                worksheet['A1'].alignment = Alignment(horizontal='center')
+                # Column Auto-Width Logic
+                # Adjusting start point based on whether index is present
+                start_col = 2 if include_index else 1
                 
-                # Iterate through all columns to find the max length
-                for i, col in enumerate(df.columns, start=2): # start=2 because column A is the Index
-                    # Calculate width of the header
-                    column_len = len(str(col))
-                    
-                    # Check the width of the data in the rows
-                    for val in df[col]:
-                        column_len = max(column_len, len(str(val)))
-                    
-                    # Set the column width (adding a little extra padding)
-                    header_cell_letter = worksheet.cell(row=1, column=i).column_letter
-                    worksheet.column_dimensions[header_cell_letter].width = column_len + 3
+                for i, col in enumerate(df.columns, start=start_col):
+                    column_len = max(len(str(col)), df[col].astype(str).map(len).max())
+                    cell_letter = worksheet.cell(row=1, column=i).column_letter
+                    worksheet.column_dimensions[cell_letter].width = column_len + 3
 
-                # Also adjust the Index column (Column A)
-                index_col_letter = worksheet.cell(row=1, column=1).column_letter
-                max_index_len = max([len(str(idx)) for idx in df.index] + [len(df.index.name or "")])
-                worksheet.column_dimensions[index_col_letter].width = max_index_len + 3
+                if include_index:
+                    # Insert the title into the top left cell
+                    worksheet['A1'] = sheet_name
+                    worksheet['A1'].font = Font(bold=True)
+                    worksheet['A1'].alignment = Alignment(horizontal='center')
+                
+                    index_col_letter = worksheet.cell(row=1, column=1).column_letter
+                    max_index_len = max([len(str(idx)) for idx in df.index] + [len(df.index.name or "")])
+                    worksheet.column_dimensions[index_col_letter].width = max_index_len + 3
 
     except PermissionError:
         print(f"\n[!] ERROR: Close '{os.path.basename(output_path)}' in Excel and try again.")

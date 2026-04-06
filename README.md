@@ -119,8 +119,6 @@ Whether using the UI or script to produce data summaries, you will get the follo
 - Data summary files stored as .json, .xlsx
 
 Using the UI gives you access to additional data visualizations and comparisons of summary data
-   
-When using the UI, additional data visualizations of data summaries are available
 
 ---
 
@@ -172,7 +170,7 @@ These values are defined in `analyze.py` and can be adjusted to change the behav
 | `FILENAME_END_TEXT` | Added to the filename of all files generated with with analyze.py | "_summary" |
 | `MIN_PHRASE_WORDCOUNT` | Min wordcount of commom phrases to look for | 1 |
 | `MAX_PHRASE_WORDCOUNT` | Max wordcount of common phrases to look for | 12 |
-| `IGNORED_WORDS` | Medical report boilerplate words to remove when looking for common phrases | "reported","event","procedure","provided", "use", "duplicate", "report", "medical","customer","received","associated","consequence", "consequences", "resulted","information","using","during", "surgery","unknown", "patient", "complete", "completed","observed","additional","another", "adverse" |
+| `IGNORED_WORDS` | Medical report boilerplate words to remove when looking for common phrases | "reported","event","procedure","provided", "use", "duplicate", "report", "medical","customer","received","associated","consequence", "consequences", "resulted","information","using","during" "surgery","unknown", "patient", "complete", "completed","observed","additional","another", "adverse" |
 | `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved | "analysis_json" |
 | `XLSX_ANALYSIS_FOLDER` | Directory where Excel summaries are saved | "analysis_excel" |
 
