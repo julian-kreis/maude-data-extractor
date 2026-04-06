@@ -5,6 +5,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 from analyze import (
+    TOP_N,
+    DUPLICATE_THRESHOLD,
     JSON_ANALYSIS_FOLDER,
     XSLX_ANALYSIS_FOLDER,
     FILENAME_END_TEXT
@@ -129,27 +131,27 @@ def main():
         st.sidebar.subheader("Download Summary Data")
 
         json_size = get_file_size_info(selected_file)
-        with open(selected_file, "rb") as f:
-            st.sidebar.download_button(
-                label=f"JSON ({json_size})",
-                data=f,
-                file_name=selected_file.name,
-                mime="application/json",
-                key=f"dl_json_{selected_file.stem}" # Added unique key to prevent refresh issues
-            )
+        json_bytes = selected_file.read_bytes()
+        st.sidebar.download_button(
+            label=f"JSON ({json_size})",
+            data=json_bytes,
+            file_name=selected_file.name,
+            mime="application/json",
+            key=f"dl_json_{selected_file.stem}"
+        )
 
         xlsx_filename = selected_file.stem + ".xlsx"
         xlsx_path = XLSX_DIR / xlsx_filename
         if xlsx_path.exists():
             xlsx_size = get_file_size_info(xlsx_path)
-            with open(xlsx_path, "rb") as f:
-                st.sidebar.download_button(
-                    label=f"Excel ({xlsx_size})",
-                    data=f,
-                    file_name=xlsx_filename,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key=f"dl_xlsx_{selected_file.stem}"
-                )
+            xlsx_bytes = xlsx_path.read_bytes()
+            st.sidebar.download_button(
+                label=f"Excel ({xlsx_size})",
+                data=xlsx_bytes,
+                file_name=xlsx_filename,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"dl_xlsx_{selected_file.stem}"
+            )
 
         models = data.get("list of models", [])
         start_date = format_date(data.get("earliest incident date"))
@@ -228,6 +230,52 @@ def main():
             
         st.markdown("##### Patient Problems Breakdown by Model")
         plot_pie_charts_for_models(pat_probs, models, "Patient Problems")
+
+        st.divider()
+
+        # --- Section: Common Phrases ---
+        st.subheader("Common Words & Phrases in Report Descriptions")
+        st.text(f"Looks for the top {TOP_N} most common words/phrases based on how many reports they appeared in. If a shorter phrase appear in a longer phrase in >={DUPLICATE_THRESHOLD*100}% of occurences, it was removed from the list to reduce the number of duplicate entries. Some phrases are missing common, non-descriptive words (eg. \"the\", \"as\", \"that\") and boilerplate medical report words (eg. \"reported\", \"observed\", \"information\") as those were removed to improve analysis.")
+
+        phrases_raw = data.get("Common phrases", [])
+        # Get the total number of incidents to calculate the percentage
+        total_incidents = data.get("type of event", {}).get("total", {}).get("total", 1)
+
+        if phrases_raw:
+            # Create the DataFrame
+            df_phrases = pd.DataFrame(phrases_raw, columns=["Phrase", "Count"])
+            
+            # Calculate the % frequency
+            df_phrases["Frequency %"] = (df_phrases["Count"] / total_incidents) * 100
+
+            # Display as a scrolling list with a Progress Column
+            st.dataframe(
+                df_phrases.sort_values(by="Count", ascending=False),
+                column_config={
+                    "Phrase": st.column_config.TextColumn(
+                        "Commonly used word or phrase",
+                        width="large",
+                    ),
+                    "Count": st.column_config.NumberColumn(
+                        "Occurrences",
+                        help="Number of reports containing this phrase",
+                        width="small",
+                    ),
+                    "Frequency %": st.column_config.ProgressColumn(
+                        "Frequency",
+                        help="Percentage of total reports this phrase appears in",
+                        format="%d%%", # Displays as 0-100%
+                        min_value=0,
+                        max_value=100,
+                        width="small",
+                    ),
+                },
+                hide_index=True,
+                width="stretch",
+                height=600
+            )
+        else:
+            st.warning("No common phrases were identified for this record.")
 
 if __name__ == "__main__":
     main()

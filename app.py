@@ -112,7 +112,7 @@ def main():
         else:
             st.success("API Key active.")
 
-    # --- Section 1: Data Retrieval ---
+    # --- Section Data Retrieval ---
     st.header("Fetch & Save Data")
     
     with st.container(border=True):
@@ -154,7 +154,7 @@ def main():
 
     st.divider()
 
-    # --- Section 2: Manage Records ---
+    # --- Section Manage Records ---
     st.header("Manage Records")
     json_files = get_json_files()
     

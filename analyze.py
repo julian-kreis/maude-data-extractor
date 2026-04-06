@@ -33,10 +33,10 @@ MAX_PHRASE_WORDCOUNT = 12
 # being general boilerplate medical report text that would clog the results
 # Note that basic English words are automatically added through ENGLISH_STOP_WORDS
 IGNORED_WORDS = {
-    "reported","event","procedure","provided", "use", "duplicate", "report",
-    "medical","customer","received","associated","consequence", "consequences",
-    "resulted","information","using","during", "surgery","unknown", "patient",
-    "complete", "completed","observed","additional","another", "adverse"
+    "reported","event","procedure","provided","use","duplicate","report",
+    "medical","customer","received","associated","consequence","consequences",
+    "resulted","information","using","during","surgery","unknown","patient",
+    "complete", "completed","observed","additional","another","adverse"
 }
 
 # Folder names for where exported data is stored
