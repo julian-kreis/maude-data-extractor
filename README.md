@@ -82,7 +82,7 @@ python analyze.py
 ---
 
 ## Features & Options
-Whether using the UI or the script, you will have the following options:
+Whether using the UI or the script to retrieve data, you will have the following options:
 
 **Enter Model Number(s):**
 
@@ -102,10 +102,23 @@ Whether using the UI or the script, you will have the following options:
 
 **Save Data as Files:**
 
-- Raw data stored as .json, .csv, .xlsx
+- Raw data files stored as .json, .csv, .xlsx
 
-- Data summaries stored as .json, .xlsx
+---
 
+Whether using the UI or script to produce data summaries, you will get the following information:
+
+- Number of events by event type and device model
+
+- Number of different product problems by device model
+
+- Number of different patient problems by device model
+
+- Most common words and phrases in event descriptions
+
+- Data summary files stored as .json, .xlsx
+
+Using the UI gives you access to additional data visualizations and comparisons of summary data
    
 When using the UI, additional data visualizations of data summaries are available
 
@@ -157,6 +170,9 @@ These values are defined in `analyze.py` and can be adjusted to change the behav
 | Constant | Description | Default |
 |----------|------------|---------|
 | `FILENAME_END_TEXT` | Added to the filename of all files generated with with analyze.py | "_summary" |
+| `MIN_PHRASE_WORDCOUNT` | Min wordcount of commom phrases to look for | 1 |
+| `MAX_PHRASE_WORDCOUNT` | Max wordcount of common phrases to look for | 12 |
+| `IGNORED_WORDS` | Medical report boilerplate words to remove when looking for common phrases | "reported","event","procedure","provided", "use", "duplicate", "report", "medical","customer","received","associated","consequence", "consequences", "resulted","information","using","during", "surgery","unknown", "patient", "complete", "completed","observed","additional","another", "adverse" |
 | `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved | "analysis_json" |
 | `XLSX_ANALYSIS_FOLDER` | Directory where Excel summaries are saved | "analysis_excel" |
 

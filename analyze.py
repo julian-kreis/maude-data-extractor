@@ -27,17 +27,16 @@ DUPLICATE_THRESHOLD = 0.9
 
 # Length of phrases to look for
 MIN_PHRASE_WORDCOUNT = 1
-MAX_PHRASE_WORDCOUNT = 6
+MAX_PHRASE_WORDCOUNT = 12
 
 # Words to remove when looking for most the most common words/phrases due to
 # being general boilerplate medical report text that would clog the results
 # Note that basic English words are automatically added through ENGLISH_STOP_WORDS
 IGNORED_WORDS = {
-    "patient","device","reported","event","procedure","provided", "use",
+    "reported","event","procedure","provided", "use", "duplicate", "report",
     "medical","customer","received","associated","consequence", "consequences",
-    "resulted","information","using","during", "surgery","unknown",
-    "complete", "completed","observed","additional","another", "adverse",
-    "duplicate", "report"
+    "resulted","information","using","during", "surgery","unknown", "patient",
+    "complete", "completed","observed","additional","another", "adverse"
 }
 
 # Folder names for where exported data is stored
