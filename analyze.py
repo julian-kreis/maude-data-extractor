@@ -6,6 +6,7 @@ from openpyxl.styles import (
 )
 from sklearn.feature_extraction.text import CountVectorizer, ENGLISH_STOP_WORDS
 import pandas as pd
+import collections
 import json
 from retrieve import (
     JSON_FOLDER,
@@ -16,16 +17,16 @@ from retrieve import (
 # Text that is added onto the end of the filename
 FILENAME_END_TEXT = "_summary"
 
-# Number of most-used 1-3 word phrases to record
-TOP_N = 50
+# Max number of most-used 1-3 word phrases to record
+TOP_N = 100
 
 # Words to ignore due to being general boilerplate medical report text that would clog the results
 # Note that basic English words are automatically added through ENGLISH_STOP_WORDS
 IGNORED_WORDS = {
-    "patient","device","reported","event","procedure","provided",
-    "medical","customer","received","associated","consequence",
+    "patient","device","reported","event","procedure","provided", "use",
+    "medical","customer","received","associated","consequence", "consquences",
     "resulted","information","using","during", "surgery","unknown",
-    "complete", "completed","observed","additional","another"
+    "complete", "completed","observed","additional","another", "adverse"
 }
 
 # Folder names for where exported data is stored
@@ -34,74 +35,73 @@ XSLX_ANALYSIS_FOLDER = "analysis_excel"
 
 def find_common_phrases(data, top_n=TOP_N):
     """
-    Finds most common words/phrases in Description field.
-    Counts each phrase only once per entry.
+    Finds common phrases within sentence boundaries. 
+    Removes sub-phrases if a longer parent phrase captures 
+    at least 90% of its occurrences.
     """
 
-    def extract_descriptions(data):
-        """
-        Return list of description strings without modifying original data
-        """
-        return [
-            entry["Description"]
-            for entry in data
-            if entry.get("Description") and entry["Description"] not in [EMPTY_FIELD, ""]
-        ]
-    
-    def clean_text(text):
-        """
-        Normalize text for NLP
-        """
-        text = text.lower()
-        text = re.sub(r"[^a-z\s]", " ", text)
-        text = re.sub(r"\s+", " ", text)
-        return text.strip()
-    
-    def dedupe_sentences(text):
-        """
-        Removes repeated sentences inside a single description
-        """
-        sentences = text.split(".")
-        seen = set()
-        unique = []
+    def is_subphrase(small, big):
+        """Checks if small phrase is a subset of big phrase (word-by-word)."""
+        s_tokens = small.split()
+        b_tokens = big.split()
+        for i in range(len(b_tokens) - len(s_tokens) + 1):
+            if b_tokens[i:i+len(s_tokens)] == s_tokens:
+                return True
+        return False
 
-        for s in sentences:
-            s = s.strip()
-            if s and s not in seen:
-                seen.add(s)
-                unique.append(s)
+    stop_words = set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS)
+    phrase_counts = collections.Counter()
 
-        return ". ".join(unique)
+    # Pre-process into "Sentence-Blocked" strings
+    # Join sentences with a special non-alphanumeric character 
+    # and tell CountVectorizer to only look at words.
+    processed_descriptions = []
+    for entry in data:
+        desc = entry.get("Description", "")
+        # Split by sentence, clean, then join with a '.' to ensure n-grams don't bridge
+        sentences = re.split(r'[.!?]+', desc.lower())
+        # We join with a period because the default tokenizer in sklearn 
+        # treats punctuation as a separator and won't form n-grams across it.
+        processed_descriptions.append(". ".join(sentences))
 
-    # --- Extract descriptions (original data untouched) ---
-    descriptions = extract_descriptions(data)
-
-    # --- Clean copies ---
-    cleaned = [
-        dedupe_sentences(clean_text(d))
-        for d in descriptions
-    ]
-
-    # --- Vectorizer ---
-    stop_words = list(ENGLISH_STOP_WORDS.union(IGNORED_WORDS))
+    # Vectorize
+    stop_words = list(set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS))
     vectorizer = CountVectorizer(
+        ngram_range=(1, 3),
         stop_words=stop_words,
-        ngram_range=(1, 3),     # words + phrases
-        binary=True             # count once per entry
+        binary=True # Count only once per report
     )
-
-    X = vectorizer.fit_transform(cleaned)
-
+    
+    X = vectorizer.fit_transform(processed_descriptions)
+    
+    # Aggregate Counts
     counts = X.sum(axis=0).A1.tolist()
     terms = vectorizer.get_feature_names_out()
+    all_results = sorted(zip(terms, counts), key=lambda x: x[1], reverse=True)
 
-    results = sorted(
-        zip(terms, counts),
-        key=lambda x: x[1],
-        reverse=True
-    )
+    # Sort by frequency and filter for items appearing at least twice
+    candidate_results = [res for res in all_results if res[1] >= 2]
+    
+    # Remove subphrases
+    filtered_results = []
+    for i, (phrase, count) in enumerate(candidate_results):
+        is_redundant = False
+        
+        for j, (other_phrase, other_count) in enumerate(candidate_results):
+            if i == j:
+                continue
+                
+            # Check if current phrase is inside another phrase
+            if is_subphrase(phrase, other_phrase):
+                # ONLY remove if the longer phrase is at least 90% as common
+                if other_count >= (0.9 * count):
+                    is_redundant = True
+                    break
+        
+        if not is_redundant:
+            filtered_results.append((phrase, count))
 
-    return results[:top_n]
+    return filtered_results[:top_n]
 
 def summarize_mdr_incidents(data):
     """
