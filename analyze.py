@@ -1,8 +1,10 @@
 import os
+import re
 from openpyxl.styles import (
     Font,
     Alignment
 )
+from sklearn.feature_extraction.text import CountVectorizer, ENGLISH_STOP_WORDS
 import pandas as pd
 import json
 from retrieve import (
@@ -14,14 +16,97 @@ from retrieve import (
 # Text that is added onto the end of the filename
 FILENAME_END_TEXT = "_summary"
 
+# Number of most-used 1-3 word phrases to record
+TOP_N = 50
+
+# Words to ignore due to being general boilerplate medical report text that would clog the results
+# Note that basic English words are automatically added through ENGLISH_STOP_WORDS
+IGNORED_WORDS = {
+    "patient","device","reported","event","procedure","provided",
+    "medical","customer","received","associated","consequence",
+    "resulted","information","using","during", "surgery","unknown",
+    "complete", "completed","observed","additional","another"
+}
+
 # Folder names for where exported data is stored
 JSON_ANALYSIS_FOLDER = "analysis_json"
 XSLX_ANALYSIS_FOLDER = "analysis_excel"
 
+def find_common_phrases(data, top_n=TOP_N):
+    """
+    Finds most common words/phrases in Description field.
+    Counts each phrase only once per entry.
+    """
+
+    def extract_descriptions(data):
+        """
+        Return list of description strings without modifying original data
+        """
+        return [
+            entry["Description"]
+            for entry in data
+            if entry.get("Description") and entry["Description"] not in [EMPTY_FIELD, ""]
+        ]
+    
+    def clean_text(text):
+        """
+        Normalize text for NLP
+        """
+        text = text.lower()
+        text = re.sub(r"[^a-z\s]", " ", text)
+        text = re.sub(r"\s+", " ", text)
+        return text.strip()
+    
+    def dedupe_sentences(text):
+        """
+        Removes repeated sentences inside a single description
+        """
+        sentences = text.split(".")
+        seen = set()
+        unique = []
+
+        for s in sentences:
+            s = s.strip()
+            if s and s not in seen:
+                seen.add(s)
+                unique.append(s)
+
+        return ". ".join(unique)
+
+    # --- Extract descriptions (original data untouched) ---
+    descriptions = extract_descriptions(data)
+
+    # --- Clean copies ---
+    cleaned = [
+        dedupe_sentences(clean_text(d))
+        for d in descriptions
+    ]
+
+    # --- Vectorizer ---
+    stop_words = list(ENGLISH_STOP_WORDS.union(IGNORED_WORDS))
+    vectorizer = CountVectorizer(
+        stop_words=stop_words,
+        ngram_range=(1, 3),     # words + phrases
+        binary=True             # count once per entry
+    )
+
+    X = vectorizer.fit_transform(cleaned)
+
+    counts = X.sum(axis=0).A1.tolist()
+    terms = vectorizer.get_feature_names_out()
+
+    results = sorted(
+        zip(terms, counts),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    return results[:top_n]
+
 def summarize_mdr_incidents(data):
     """
-        Takes in a JSON object in the format of the .json exports created in retrieve.py
-        Returns a JSON object with a summary of the incidents
+    Takes in a JSON object in the format of the .json exports created in retrieve.py
+    Returns a JSON object with a summary of the incidents
     """
 
     # Initialize the structure
@@ -32,7 +117,8 @@ def summarize_mdr_incidents(data):
         "latest incident date": None,
         "type of event": {cat: {"total": 0} for cat in event_categories},
         "Product problems": {},
-        "Patient problems": {}
+        "Patient problems": {},
+        "Common phrases": {}
     }
     summary["type of event"]["total"] = {"total": 0}
 
@@ -82,6 +168,9 @@ def summarize_mdr_incidents(data):
         summary["Patient problems"] = dict(
             sorted(summary["Patient problems"].items(), key=lambda item: item[1]["total"], reverse=True)
         )
+
+    # Add most-used phrases
+    summary["Description phrases"] = find_common_phrases(data)
 
     # Finalize Metadata
     summary["list of models"] = sorted(list(models_set))
