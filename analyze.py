@@ -20,13 +20,24 @@ FILENAME_END_TEXT = "_summary"
 # Max number of most-used 1-3 word phrases to record
 TOP_N = 100
 
-# Words to ignore due to being general boilerplate medical report text that would clog the results
+# Subphrase duplicate threshold
+# If a shorter phrase is contained in a longer phrase with at least this frequency,
+# removes it from the list of common phrases
+DUPLICATE_THRESHOLD = 0.9
+
+# Length of phrases to look for
+MIN_PHRASE_WORDCOUNT = 1
+MAX_PHRASE_WORDCOUNT = 6
+
+# Words to remove when looking for most the most common words/phrases due to
+# being general boilerplate medical report text that would clog the results
 # Note that basic English words are automatically added through ENGLISH_STOP_WORDS
 IGNORED_WORDS = {
     "patient","device","reported","event","procedure","provided", "use",
-    "medical","customer","received","associated","consequence", "consquences",
+    "medical","customer","received","associated","consequence", "consequences",
     "resulted","information","using","during", "surgery","unknown",
-    "complete", "completed","observed","additional","another", "adverse"
+    "complete", "completed","observed","additional","another", "adverse",
+    "duplicate", "report"
 }
 
 # Folder names for where exported data is stored
@@ -40,17 +51,45 @@ def find_common_phrases(data, top_n=TOP_N):
     at least 90% of its occurrences.
     """
 
-    def is_subphrase(small, big):
-        """Checks if small phrase is a subset of big phrase (word-by-word)."""
-        s_tokens = small.split()
-        b_tokens = big.split()
-        for i in range(len(b_tokens) - len(s_tokens) + 1):
-            if b_tokens[i:i+len(s_tokens)] == s_tokens:
-                return True
-        return False
+    def remove_subphrases(candidate_results, max_len=MAX_PHRASE_WORDCOUNT, threshold=DUPLICATE_THRESHOLD):
+        # DOES NOT MAINTAIN LIST ORDER
+
+        # tokenize + sort longest first
+        phrases = [
+            (tuple(p.split()), c)
+            for p, c in candidate_results
+            if len(p.split()) <= max_len
+        ]
+
+        phrases.sort(key=lambda x: (-len(x[0]), -x[1]))
+
+        # substring index built ONLY from kept longer phrases
+        substring_index = collections.defaultdict(list)
+
+        filtered = []
+
+        for tokens, count in phrases:
+            redundant = False
+
+            # check if any longer kept phrase contains this
+            for parent_tokens, parent_count in substring_index.get(tokens, []):
+                if parent_count >= threshold * count:
+                    redundant = True
+                    break
+
+            if not redundant:
+                filtered.append((" ".join(tokens), count))
+
+                # add this phrase to index so it can remove shorter ones
+                length = len(tokens)
+                for sub_len in range(1, length):
+                    for i in range(length - sub_len + 1):
+                        substring = tokens[i:i+sub_len]
+                        substring_index[substring].append((tokens, count))
+
+        return filtered
 
     stop_words = set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS)
-    phrase_counts = collections.Counter()
 
     # Pre-process into "Sentence-Blocked" strings
     # Join sentences with a special non-alphanumeric character 
@@ -67,9 +106,10 @@ def find_common_phrases(data, top_n=TOP_N):
     # Vectorize
     stop_words = list(set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS))
     vectorizer = CountVectorizer(
-        ngram_range=(1, 3),
+        ngram_range=(MIN_PHRASE_WORDCOUNT, MAX_PHRASE_WORDCOUNT),
         stop_words=stop_words,
-        binary=True # Count only once per report
+        binary=True, # Count only once per report
+        min_df=2
     )
     
     X = vectorizer.fit_transform(processed_descriptions)
@@ -79,28 +119,11 @@ def find_common_phrases(data, top_n=TOP_N):
     terms = vectorizer.get_feature_names_out()
     all_results = sorted(zip(terms, counts), key=lambda x: x[1], reverse=True)
 
-    # Sort by frequency and filter for items appearing at least twice
-    candidate_results = [res for res in all_results if res[1] >= 2]
-    
-    # Remove subphrases
-    filtered_results = []
-    for i, (phrase, count) in enumerate(candidate_results):
-        is_redundant = False
-        
-        for j, (other_phrase, other_count) in enumerate(candidate_results):
-            if i == j:
-                continue
-                
-            # Check if current phrase is inside another phrase
-            if is_subphrase(phrase, other_phrase):
-                # ONLY remove if the longer phrase is at least 90% as common
-                if other_count >= (0.9 * count):
-                    is_redundant = True
-                    break
-        
-        if not is_redundant:
-            filtered_results.append((phrase, count))
+    # Remove common subphrases as duplicates
+    filtered_results = remove_subphrases(all_results[:top_n*5]) # no limit causes unneeded processing time, too small a limit can delete valid results
 
+    # Return the top phrases in order
+    filtered_results.sort(key=lambda x: x[1], reverse=True)
     return filtered_results[:top_n]
 
 def summarize_mdr_incidents(data):
