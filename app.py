@@ -101,7 +101,7 @@ def confirm_delete_dialog(filename, paths):
 st.set_page_config(page_title="MAUDE Data Extractor", page_icon="🏥", layout="wide")
 
 def main():
-    st.title("🏥 MAUDE Data Extractor")
+    st.title("MAUDE Data Extractor")
 
     # --- Sidebar: API Configuration ---
     with st.sidebar:
@@ -142,7 +142,7 @@ def main():
             st.warning(f"⚠️ A record named '{filename}' already exists.")
             confirm_overwrite = st.checkbox("Confirm Overwrite")
 
-        if st.button("🚀 Run", type="primary"):
+        if st.button("Run", type="primary"):
             if not cat_input:
                 st.error("Model Number is required.")
             elif not filename.strip():

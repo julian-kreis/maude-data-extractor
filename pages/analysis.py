@@ -235,7 +235,7 @@ def main():
 
         # --- Section: Common Phrases ---
         st.subheader("Common Words & Phrases in Report Descriptions")
-        st.text(f"Looks for the top {TOP_N} most common words/phrases based on how many reports they appeared in. If a shorter phrase appear in a longer phrase in >={DUPLICATE_THRESHOLD*100}% of occurences, it was removed from the list to reduce the number of duplicate entries. Some phrases are missing common, non-descriptive words (eg. \"the\", \"as\", \"that\") and boilerplate medical report words (eg. \"reported\", \"observed\", \"information\") as those were removed to improve analysis.")
+        st.text(f"Looks for the top {TOP_N} most common words/phrases based on how many reports they appeared in. If a shorter phrase appeared in a longer phrase in >={DUPLICATE_THRESHOLD*100}% of occurences, the shorter phrase was removed from the list to reduce the number of duplicate entries. Some phrases are missing common, non-descriptive words (eg. \"the\", \"as\", \"that\") and boilerplate medical report words (eg. \"reported\", \"observed\", \"information\") as those were removed to improve analysis.")
 
         phrases_raw = data.get("Common phrases", [])
         # Get the total number of incidents to calculate the percentage
