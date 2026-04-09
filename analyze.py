@@ -71,7 +71,7 @@ def find_common_phrases(data, top_n=TOP_N):
             redundant = False
 
             # check if any longer kept phrase contains this
-            for parent_tokens, parent_count in substring_index.get(tokens, []):
+            for parent_tokens, parent_count in substring_index.get(tokens, []): # Do NOT remove parent_tokens even though it may say the variable is not accessed. Trust me.
                 if parent_count >= threshold * count:
                     redundant = True
                     break
@@ -98,20 +98,28 @@ def find_common_phrases(data, top_n=TOP_N):
         desc = entry.get("Description", "")
         # Split by sentence, clean, then join with a '.' to ensure n-grams don't bridge
         sentences = re.split(r'[.!?]+', desc.lower())
-        # We join with a period because the default tokenizer in sklearn 
+        # Join with a period because the default tokenizer in sklearn 
         # treats punctuation as a separator and won't form n-grams across it.
         processed_descriptions.append(". ".join(sentences))
 
     # Vectorize
-    stop_words = list(set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS))
-    vectorizer = CountVectorizer(
-        ngram_range=(MIN_PHRASE_WORDCOUNT, MAX_PHRASE_WORDCOUNT),
-        stop_words=stop_words,
-        binary=True, # Count only once per report
-        min_df=2
-    )
+    try:
+        stop_words = list(set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS))
+        vectorizer = CountVectorizer(
+            ngram_range=(MIN_PHRASE_WORDCOUNT, MAX_PHRASE_WORDCOUNT),
+            stop_words=stop_words,
+            binary=True, # Count only once per report
+            min_df=2
+        )
+        
+        X = vectorizer.fit_transform(processed_descriptions)
     
-    X = vectorizer.fit_transform(processed_descriptions)
+    except ValueError as e:
+        # Specifically catch if vocabulary is empty (can happen on small datasets)
+        if "empty vocabulary" in str(e):
+            return []
+        # If it's a different error, raise it as normal
+        raise e
     
     # Aggregate Counts
     counts = X.sum(axis=0).A1.tolist()

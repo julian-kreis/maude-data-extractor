@@ -1,3 +1,4 @@
+from dedupe.core import BlockingError
 import requests
 import json
 import csv
@@ -192,25 +193,36 @@ def run_deduplication(data_list):
     # 4. Clustering
     # This identifies groups and assigns a confidence score
     print('Identifying possible duplicates...')
-    clustered_dupes = deduper.partition(data_d, threshold=0.5)
+    try:
+        clustered_dupes = deduper.partition(data_d, threshold=0.5)
 
-    # 5. Map results back to the original list
-    # Initialize all with 0 (meaning no duplicate found)
-    for record in data_list:
-        record["Possible Duplicate Group"] = 0
-        # record["Confidence Score"] = 0
+        # 5. Map results back to the original list
+        # Initialize all with 0 (meaning no duplicate found)
+        for record in data_list:
+            record["Possible Duplicate Group"] = 0
+            # record["Confidence Score"] = 0
 
-    for cluster_id, (records, scores) in enumerate(clustered_dupes):
-        for record_id, score in zip(records, scores):
-            idx = int(record_id)
-            data_list[idx]["Possible Duplicate Group"] = cluster_id + 1
-            # data_list[idx]["Confidence Score"] = round(score, 4)
+        for cluster_id, (records, scores) in enumerate(clustered_dupes):
+            for record_id, score in zip(records, scores):
+                idx = int(record_id)
+                data_list[idx]["Possible Duplicate Group"] = cluster_id + 1
+                # data_list[idx]["Confidence Score"] = round(score, 4)
 
-    # Count of duplicate events (counts only the extra records beyond the first one in each group)
-    duplicate_event_count = sum(len(records) - 1 for records, _ in clustered_dupes)
-    print(f"{duplicate_event_count} likely duplicate events found")
+        # Count of duplicate events (counts only the extra records beyond the first one in each group)
+        duplicate_event_count = sum(len(records) - 1 for records, _ in clustered_dupes)
+        print(f"{duplicate_event_count} likely duplicate events found")
 
-    return data_list
+        return data_list
+    
+    except BlockingError:
+        # If no records were blocked together (can happen with very small datasets), there are no duplicates to return
+        print("Error: Not enough data for dedupe to create blocks. Each report will be marked as unique.")
+        i = 0
+        for record in data_list:
+            record["Possible Duplicate Group"] = i
+            i += 1
+            
+        return data_list
 
 def merge_duplicate_groups(data_list):
     grouped = {}

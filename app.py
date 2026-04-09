@@ -101,14 +101,14 @@ def confirm_delete_dialog(filename, paths):
 st.set_page_config(page_title="MAUDE Data Extractor", page_icon="🏥", layout="wide")
 
 def main():
-    st.title("MAUDE Data Extractor")
+    st.title("🏥 MAUDE Data Extractor")
 
     # --- Sidebar: API Configuration ---
     with st.sidebar:
         st.header("Settings")
         api_key = os.getenv("FDA_API_KEY")
         if not api_key:
-            api_key = st.text_input("Enter FDA API Key", type="password")
+            api_key = st.text_input("Enter FDA API Key (optional)", type="password")
         else:
             st.success("API Key active.")
 

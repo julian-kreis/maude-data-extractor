@@ -57,7 +57,7 @@ FDA_API_KEY=your_api_key_here
 
 ## Use
 
-You can run the fetcher via the Streamlit Web Interface (recommended) or the Command Line Script.
+You can run the program via the Streamlit Web Interface (recommended) or the Command Line Script.
 
 **Streamlit Web Interface (recomended)**  
 Run the following command to launch the browser-based UI:
