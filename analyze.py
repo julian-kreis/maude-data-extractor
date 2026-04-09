@@ -88,8 +88,6 @@ def find_common_phrases(data, top_n=TOP_N):
 
         return filtered
 
-    stop_words = set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS)
-
     # Pre-process into "Sentence-Blocked" strings
     # Join sentences with a special non-alphanumeric character 
     # and tell CountVectorizer to only look at words.
@@ -104,14 +102,16 @@ def find_common_phrases(data, top_n=TOP_N):
 
     # Vectorize
     try:
-        stop_words = list(set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS))
+        stop_words = set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS)
+        stop_words.discard("not")
+        stop_words = list(stop_words)
+        
         vectorizer = CountVectorizer(
             ngram_range=(MIN_PHRASE_WORDCOUNT, MAX_PHRASE_WORDCOUNT),
             stop_words=stop_words,
             binary=True, # Count only once per report
             min_df=2
         )
-        
         X = vectorizer.fit_transform(processed_descriptions)
     
     except ValueError as e:
