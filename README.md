@@ -16,8 +16,6 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 ## For Developers
 
----
-
 ## Setup
 
 **Requirements:**
