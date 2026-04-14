@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: maude-app
+    ports:
+      - "8501:8501"
+    environment:
+      - FDA_API_KEY=${FDA_API_KEY}
+    volumes:
+      - ./:/app
+    restart: unless-stopped

@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.env
+.envrc
+.git
+.gitignore
+data_json/
+data_csv/
+data_excel/
+analysis_json/
+analysis_excel/
+maude_dedupe_settings/
+maude_dedupe_training.json

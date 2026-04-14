@@ -59,7 +59,7 @@ FDA_API_KEY=your_api_key_here
 
 You can run the fetcher via the Streamlit Web Interface (recommended) or the Command Line Script.
 
-**Streamlit Web Interface (recomended)**  
+**Streamlit Web Interface (recommended)**  
 Run the following command to launch the browser-based UI:
 
 ```
@@ -78,6 +78,32 @@ Run the analyze script directly to create summary files for all data json files:
 ```
 python analyze.py
 ```
+
+
+---
+
+## Running in Docker (single-command)
+
+A Docker setup is included so you can run the Streamlit UI in a container. A small wrapper script, `run-docker.sh`, is provided so a single command will build and run the application.
+
+- From the project root run (foreground, logs in terminal):
+
+```
+sh run-docker.sh
+```
+
+- To run detached (background) you can use the underlying compose command directly:
+
+```
+docker compose up --build -d
+```
+
+Notes:
+- The container serves Streamlit on port 8501 by default (map: host 8501 -> container 8501).
+- If present, the `.env` file in the project root will be loaded so you can set `FDA_API_KEY` there.
+- The wrapper uses whatever Docker CLI is available (`docker compose` plugin or `docker-compose`).
+- If you prefer, make the wrapper executable and run directly: `chmod +x run-docker.sh && ./run-docker.sh`.
+
 
 ---
 
