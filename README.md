@@ -4,7 +4,7 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 ---
 
-## For Non-Developers
+# For Non-Developers
 
 - Go to the latest release at https://github.com/julian-kreis/maude-data-extractor/releases and download the zip file corresponding to your OS
 
@@ -14,7 +14,7 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 ---
 
-## For Developers
+# For Developers
 
 ## Setup
 
