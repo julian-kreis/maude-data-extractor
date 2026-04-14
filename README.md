@@ -177,9 +177,9 @@ These values are defined in `retrieve.py` and can be adjusted to change the beha
 | `EVENT_SEVERITY` |	Priority mapping used when merging duplicates (keeps the most severe type) | Death > Injury > Malfunction > Other
 | `EMPTY_FIELD` |	The placeholder string used for missing data in reports |	"N/A"
 | `LIST_STR` | String to put between values in lists | "; "
-| `JSON_FOLDER` |	Directory where JSON exports are saved | "data_json"
-| `CSV_FOLDER` |	Directory where CSV exports are saved | "data_csv"
-| `EXCEL_FOLDER` |	Directory where Excel exports are saved | "data_excel"
+| `JSON_FOLDER` |	Directory where JSON exports are saved (must be changed manually in .gitignore and build_exe files) | "data_json"
+| `CSV_FOLDER` |	Directory where CSV exports are saved (must be changed manually in .gitignore and build_exe files) | "data_csv"
+| `EXCEL_FOLDER` |	Directory where Excel exports are saved (must be changed manually in .gitignore and build_exe files) | "data_excel"
 
 These values are defined in `analyze.py` and can be adjusted to change the behavior of the program:
 
@@ -189,8 +189,8 @@ These values are defined in `analyze.py` and can be adjusted to change the behav
 | `MIN_PHRASE_WORDCOUNT` | Min wordcount of commom phrases to look for | 1 |
 | `MAX_PHRASE_WORDCOUNT` | Max wordcount of common phrases to look for | 12 |
 | `IGNORED_WORDS` | Medical report boilerplate words to remove when looking for common phrases | "reported","event","procedure","provided","use","duplicate","report","medical","customer","received","associated","consequence","consequences","resulted","information","using","during","surgery","unknown","patient","complete","completed","observed","additional","another","adverse" |
-| `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved | "analysis_json" |
-| `XLSX_ANALYSIS_FOLDER` | Directory where Excel summaries are saved | "analysis_excel" |
+| `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved (must be changed manually in .gitignore and build_exe files) | "analysis_json" |
+| `XLSX_ANALYSIS_FOLDER` | Directory where Excel summaries are saved (must be changed manually in .gitignore and build_exe files) | "analysis_excel" |
 
 These values are defined in `analysis.py` and can be adjusted to change the behavior of the program:
 

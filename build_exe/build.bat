@@ -1,65 +1,56 @@
 @echo off
+setlocal
 cd ..
 
-setlocal
+echo =====================================
+echo MaudeDataExtractor CLEAN AUTO-BUILD
+echo =====================================
 
-echo =====================================
-echo MaudeDataExtractor AUTO BUILD
-echo =====================================
+set STAGE=build_stage
 
 REM =====================================
-REM 1. Ensure venv exists
+REM 1. Clean and Create Staging Area
+REM =====================================
+if exist %STAGE% rmdir /s /q %STAGE%
+mkdir %STAGE%
+
+echo Preparing clean source files...
+
+REM Define folders to exclude
+set EXCLUDES=venv .git __pycache__ build dist data_csv data_json data_excel analysis_excel analysis_json %STAGE%
+
+REM Copy project safely to staging (Excluding the junk)
+robocopy . %STAGE% /E /XD %EXCLUDES% /XF *.pyc *.pyo *.log *.spec
+
+REM =====================================
+REM 2. Environment Setup
 REM =====================================
 if not exist venv (
-    echo No venv found. Creating virtual environment...
+    echo Creating virtual environment...
     python -m venv venv
 )
 
-REM =====================================
-REM 2. Activate venv
-REM =====================================
-echo Activating virtual environment...
 call venv\Scripts\activate
 
-REM =====================================
-REM 3. Upgrade pip
-REM =====================================
-echo.
-echo Upgrading pip...
+echo Upgrading dependencies...
 python -m pip install --upgrade pip
-
-REM =====================================
-REM 4. Check/install requirements
-REM =====================================
-echo.
-echo Installing requirements if needed...
-
-REM This installs everything (pip handles "already installed" automatically)
 pip install -r requirements.txt
-
-REM =====================================
-REM 5. Ensure PyInstaller exists
-REM =====================================
-echo.
-echo Ensuring PyInstaller is installed...
 pip install --upgrade pyinstaller
 
 REM =====================================
-REM 6. Clean old builds
+REM 3. Clean Old Build Artifacts
 REM =====================================
-echo.
-echo Cleaning old build files...
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
-if exist *.spec del /q *.spec
 
 REM =====================================
-REM 7. Build EXE
+REM 4. Build EXE from Staging
 REM =====================================
 echo.
-echo =====================================
-echo Building executable...
-echo =====================================
+echo Building executable from clean stage...
+
+:: We move into staging so PyInstaller sees this as the 'root'
+cd %STAGE%
 
 pyinstaller --clean --noconfirm --onedir --windowed ^
 --name "MaudeDataExtractor" ^
@@ -75,11 +66,15 @@ pyinstaller --clean --noconfirm --onedir --windowed ^
 --add-data ".;." ^
 launcher.py
 
-echo.
+REM Move the final product back to the main project root and cleanup
+echo Moving build to project root...
+cd ..
+if exist dist_final rmdir /s /q dist_final
+xcopy "%STAGE%\dist" ".\dist" /E /I /Y
+
 echo =====================================
 echo BUILD COMPLETE
-echo =====================================
-echo Output: dist\MaudeDataExtractor\
+echo Final EXE is in: .\dist\MaudeDataExtractor\
 echo =====================================
 
 pause
