@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import sys
 import json
 from datetime import datetime
 from pathlib import Path
@@ -21,7 +22,12 @@ OTHER_LABEL_MAX_CHARS = 50
 st.set_page_config(page_title="Incident Analysis", layout="wide")
 
 # Path resolution
-ROOT_DIR = Path(__file__).parent.parent
+if getattr(sys, 'frozen', False):
+    # If running as an EXE, use the directory of the EXE file
+    ROOT_DIR = Path(sys.executable).parent
+else:
+    # If running as a script, use the directory of the script
+    ROOT_DIR = Path(__file__).parent.parent
 JSON_DIR = ROOT_DIR / JSON_ANALYSIS_FOLDER
 XLSX_DIR = ROOT_DIR / XSLX_ANALYSIS_FOLDER
 
