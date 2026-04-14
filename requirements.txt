@@ -11,3 +11,6 @@ scikit-learn==1.8.0
 # Frontend and Visualization
 streamlit==1.55.0
 plotly==6.6.0
+
+# Executable Creation
+pyinstaller==6.19.0

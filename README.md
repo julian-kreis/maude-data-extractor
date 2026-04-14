@@ -124,6 +124,22 @@ Using the UI gives you access to additional data visualizations and comparisons 
 
 ---
 
+## Creating a New Executable File
+
+If you are looking for an executable file to run the program, check the releases tab for the project in GitHub.  
+
+If you are looking to create a new executable file:  
+
+**Windows**  
+
+Run build.bat
+
+**macOS / Linux**
+
+Run build.sh
+
+---
+
 ## Duplicate Training
 
 The script uses the `dedupe` library to identify possible duplicate reports (reports that all reference the same event).

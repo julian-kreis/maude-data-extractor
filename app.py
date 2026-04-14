@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import os
 from dotenv import load_dotenv
 from retrieve import (
@@ -101,6 +102,18 @@ def confirm_delete_dialog(filename, paths):
 st.set_page_config(page_title="MAUDE Data Extractor", page_icon="🏥", layout="wide")
 
 def main():
+    # This will "ping" our server to indicate that the page is active.
+    # Once the page is closed or inactive, the pings will stop.
+    components.html("""
+        <script>
+            setInterval(function() {
+                var timestamp = new Date().getTime();
+                var img = new Image();
+                img.src = "http://127.0.0.1:8502/ping?t=" + timestamp;
+            }, 5000); // One ping every 5 seconds
+        </script>
+    """, height=0)
+
     st.title("🏥 MAUDE Data Extractor")
 
     # --- Sidebar: API Configuration ---
