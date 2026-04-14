@@ -25,6 +25,15 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 # Copy project
 COPY . .
 
+# Normalize line endings inside the image according to .gitattributes
+# This initializes a temporary git index and re-adds files so attributes are applied.
+# Keeps git already installed above.
+RUN git init \
+    && git config core.autocrlf false \
+    && git add --renormalize -A \
+    && git reset --hard \
+    && rm -rf .git
+
 # Add the entrypoint and ensure it's executable
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
