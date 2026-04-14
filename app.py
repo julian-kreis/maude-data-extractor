@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import os
+import sys
 from dotenv import load_dotenv
 from retrieve import (
     fetch_maude_events,
@@ -102,18 +103,6 @@ def confirm_delete_dialog(filename, paths):
 st.set_page_config(page_title="MAUDE Data Extractor", page_icon="🏥", layout="wide")
 
 def main():
-    # This will "ping" our server to indicate that the page is active.
-    # Once the page is closed or inactive, the pings will stop.
-    components.html("""
-        <script>
-            setInterval(function() {
-                var timestamp = new Date().getTime();
-                var img = new Image();
-                img.src = "http://127.0.0.1:8502/ping?t=" + timestamp;
-            }, 5000); // One ping every 5 seconds
-        </script>
-    """, height=0)
-
     st.title("🏥 MAUDE Data Extractor")
 
     # --- Sidebar: API Configuration ---
@@ -351,6 +340,18 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
         st.warning("No results found.")
 
 if __name__ == "__main__":
+    # This will "ping" our server to indicate that the page is active.
+    # Once the page is closed or inactive, the pings will stop.
+    if getattr(sys, 'frozen', False):
+        components.html("""
+            <script>
+                setInterval(function() {
+                    var img = new Image();
+                    img.src = "http://127.0.0.1:8502/ping?t=" + new Date().getTime();
+                }, 5000); 
+            </script>
+        """, height=0)
+
     # Create pages
     home_page = st.Page(main, title="Home", icon="🏠")
     analysis_page = st.Page("pages/analysis.py", title="Data Analysis", icon="📈")

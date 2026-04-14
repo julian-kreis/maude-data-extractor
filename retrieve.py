@@ -192,7 +192,7 @@ def run_deduplication(data_list):
     if os.path.exists(settings_file):
         print(f"Loading existing settings from: {settings_file}")
         with open(settings_file, 'rb') as f:
-            deduper = dedupe.StaticDedupe(f, n_procs=1)
+            deduper = dedupe.StaticDedupe(f)
     else:
         if is_frozen:
             raise FileNotFoundError(
