@@ -16,12 +16,6 @@ This Python project fetches medical device adverse event reports from the FDA MA
 python -m venv venv
 ```
 
-- **macOS / Linux:**  
-
-```
-python3 -m venv venv
-```
-
 
 2. **Activate the virtual environment**  
 
@@ -64,6 +58,12 @@ Run the following command to launch the browser-based UI:
 
 ```
 streamlit run app.py
+```
+
+If you get missing module errors, you may run this instead:
+
+```
+python -m streamlit run app.py
 ```
 
 **Command Line**  
@@ -151,7 +151,7 @@ Note: You may modify the `SHORT_DESCRIPTION_LENGTH` and `TRAINING_SAMPLE_SIZE` c
 
 ## Configurable Constants
 
-These values are defined in `retrieve.py` and can be adjusted to change the behavior of the data processing and storage:
+These values are defined in `retrieve.py` and can be adjusted to change the behavior of the program:
 
 | Constant | Description | Default |
 |----------|------------|---------|
@@ -165,7 +165,7 @@ These values are defined in `retrieve.py` and can be adjusted to change the beha
 | `CSV_FOLDER` |	Directory where CSV exports are saved | "data_csv"
 | `EXCEL_FOLDER` |	Directory where Excel exports are saved | "data_excel"
 
-These values are defined in `analyze.py` and can be adjusted to change the behavior of the data processing and storage:
+These values are defined in `analyze.py` and can be adjusted to change the behavior of the program:
 
 | Constant | Description | Default |
 |----------|------------|---------|
@@ -176,13 +176,13 @@ These values are defined in `analyze.py` and can be adjusted to change the behav
 | `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved | "analysis_json" |
 | `XLSX_ANALYSIS_FOLDER` | Directory where Excel summaries are saved | "analysis_excel" |
 
-These values are defined in `analysis.py` and can be adjusted to change the behavior of the data processing and storage:
+These values are defined in `analysis.py` and can be adjusted to change the behavior of the program:
 
 | Constant | Description | Default |
 |----------|------------|---------|
 | `OTHER_LABEL_MAX_CHARS` | In charts, the "Other" label gets truncated to this length | 50 |
 
-These values are defined in `comparison.py` and can be adjusted to change the behavior of the data processing and storage:
+These values are defined in `comparison.py` and can be adjusted to change the behavior of the program:
 
 | Constant | Description | Default |
 |----------|------------|---------|
