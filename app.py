@@ -345,10 +345,12 @@ if __name__ == "__main__":
     if getattr(sys, 'frozen', False):
         components.html("""
             <script>
-                setInterval(function() {
+                function ping() {
                     var img = new Image();
                     img.src = "http://127.0.0.1:8502/ping?t=" + new Date().getTime();
-                }, 5000); 
+                }
+                ping(); // ping immediately on startup
+                setInterval(ping, 5000); // then continue every 5 seconds
             </script>
         """, height=0)
 
