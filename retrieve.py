@@ -1,4 +1,5 @@
 from dedupe.core import BlockingError
+import sys
 import requests
 import json
 import csv
@@ -169,31 +170,54 @@ def run_deduplication(data_list):
         dedupe.variables.Text('Description_Short', has_missing=True),
     ]
 
-    # 3. Initialize Deduper
-    deduper = dedupe.Dedupe(fields)
-    settings_file = 'maude_dedupe_settings'
-    training_file = 'maude_dedupe_training.json'
+    # 3. Initialize Deduper, change path depending on if the program is being run as an exe
+    is_frozen = getattr(sys, 'frozen', False) # is running as exe
+    
+    if is_frozen:
+        os.environ["NUMEXPR_MAX_THREADS"] = "1"
+        os.environ["OMP_NUM_THREADS"] = "1"
+
+        # Path where the .exe lives
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+    else:
+        # Path where the .py script lives
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    settings_file = os.path.join(base_path, 'maude_dedupe_settings')
+    training_file = os.path.join(base_path, 'maude_dedupe_training.json')
+
+    # Define cores based on environment
+    is_frozen = getattr(sys, 'frozen', False) 
 
     if os.path.exists(settings_file):
-        print('Reading settings from', settings_file)
+        print(f"Loading existing settings from: {settings_file}")
         with open(settings_file, 'rb') as f:
             deduper = dedupe.StaticDedupe(f)
     else:
-        # To train, dedupe needs examples. This will prompt you in the console
-        print('No settings file found. Starting active labeling.\nOnce data is prepared, you will be prompted to help train the identification algorithm...')
-        deduper.prepare_training(data_d, sample_size=TRAINING_SAMPLE_SIZE)
-        dedupe.console_label(deduper)
-        deduper.train()
+        if is_frozen:
+            raise FileNotFoundError(
+                "Dedupe settings file missing! Training is disabled in EXE mode. "
+                "Please run the app in 'dev mode' first to generate the settings file."
+            )
+        else:
+            print("No settings found. Starting active labeling in console...")
+            # Set n_procs here as well for training
+            deduper = dedupe.Dedupe(fields)
+            
+            deduper.prepare_training(data_d, sample_size=TRAINING_SAMPLE_SIZE)
+            dedupe.console_label(deduper)
+            deduper.train()
 
-        with open(settings_file, 'wb') as f:
-            deduper.write_settings(f)
-        with open(training_file, 'w') as f:
-            deduper.write_training(f)
+            with open(settings_file, 'wb') as f:
+                deduper.write_settings(f)
+            with open(training_file, 'w') as f:
+                deduper.write_training(f)
 
     # 4. Clustering
     # This identifies groups and assigns a confidence score
     print('Identifying possible duplicates...')
     try:
+        # If running as exe, will only use 1 core
         clustered_dupes = deduper.partition(data_d, threshold=0.5)
 
         # 5. Map results back to the original list

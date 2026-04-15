@@ -1,5 +1,7 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import os
+import sys
 from dotenv import load_dotenv
 from retrieve import (
     fetch_maude_events,
@@ -338,6 +340,20 @@ def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, ap
         st.warning("No results found.")
 
 if __name__ == "__main__":
+    # This will "ping" our server to indicate that the page is active.
+    # Once the page is closed or inactive, the pings will stop.
+    if getattr(sys, 'frozen', False):
+        components.html("""
+            <script>
+                function ping() {
+                    var img = new Image();
+                    img.src = "http://127.0.0.1:8502/ping?t=" + new Date().getTime();
+                }
+                ping(); // ping immediately on startup
+                setInterval(ping, 5000); // then continue every 5 seconds
+            </script>
+        """, height=0)
+
     # Create pages
     home_page = st.Page(main, title="Home", icon="🏠")
     analysis_page = st.Page("pages/analysis.py", title="Data Analysis", icon="📈")
