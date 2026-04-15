@@ -90,7 +90,6 @@ def main_launcher():
     )
 
     # Opens the browser
-    time.sleep(5)
     webbrowser.open(f"http://{HOST_IP}:{STREAMLIT_PORT}")
     
     # Activity Check Loop
