@@ -47,6 +47,31 @@ def get_file_size_info(filepath):
         return f"{size_bytes / 1024:.1f} KB"
     else:
         return f"{size_bytes / (1024 * 1024):.1f} MB"
+    
+def create_dl_button(column, label, path, mime, base_key, help_text=""):
+    """
+    Handles both string paths and Path objects. 
+    Busts Streamlit cache using file modification time.
+    """
+    # Convert pathlib objects to strings for os.path functions
+    path_str = str(path)
+    
+    if os.path.exists(path_str):
+        # Get modified time to force a fresh key/cache bust
+        mtime = os.path.getmtime(path_str)
+        size = get_file_size_info(path) # Your existing size function
+        
+        with open(path_str, "rb") as f:
+            column.download_button(
+                label=f"{label} ({size})",
+                data=f.read(),
+                file_name=os.path.basename(path_str),
+                mime=mime,
+                key=f"{base_key}_{mtime}", # Unique ID based on time
+                help=help_text
+            )
+    else:
+        column.button(f"{label} N/A", disabled=True, key=f"{base_key}_na")
 
 # --- Popup Dialogs ---
 @st.dialog("Rename Record")
@@ -174,93 +199,36 @@ def main():
             col1, col2, col3, col4 = st.columns([2, 3, 2, 1])
             clean_name = f.replace(".json", "")
             
-            json_path = os.path.join(JSON_FOLDER, f)
-            csv_path = os.path.join(CSV_FOLDER, f.replace(".json", ".csv"))
-            xlsx_path = os.path.join(EXCEL_FOLDER, f.replace(".json", ".xlsx"))
-            
-            # Analysis Paths
-            sum_json_path = os.path.join(JSON_ANALYSIS_FOLDER, f"{clean_name}{FILENAME_END_TEXT}.json")
-            sum_xlsx_path = os.path.join(XSLX_ANALYSIS_FOLDER, f"{clean_name}{FILENAME_END_TEXT}.xlsx")
-
-            # Group them for the dialogs
-            file_paths = [json_path, csv_path, xlsx_path, sum_json_path, sum_xlsx_path]
+            # Paths
+            paths = {
+                "json": os.path.join(JSON_FOLDER, f),
+                "csv": os.path.join(CSV_FOLDER, f.replace(".json", ".csv")),
+                "xlsx": os.path.join(EXCEL_FOLDER, f.replace(".json", ".xlsx")),
+                "sum_json": os.path.join(JSON_ANALYSIS_FOLDER, f"{clean_name}{FILENAME_END_TEXT}.json"),
+                "sum_xlsx": os.path.join(XSLX_ANALYSIS_FOLDER, f"{clean_name}{FILENAME_END_TEXT}.xlsx")
+            }
 
             col1.markdown(f"**{clean_name}**")
 
-            # Download Buttons
             try:
                 btn_json, btn_csv, btn_xlsx = col2.columns(3)
                 btn_sum_json, btn_sum_xlsx = col3.columns(2)
 
                 # JSON Download
-                json_size = get_file_size_info(json_path)
-                btn_json.download_button(
-                    f"JSON ({json_size})",
-                    data=open(json_path, "rb"),
-                    file_name=f,
-                    mime="application/json",
-                    key=f"dl_json_{f}",
-                    help="Raw JSON"
-                )
-
+                create_dl_button(btn_json, "JSON", paths["json"], "application/json", "dl_json", "Raw JSON")
+                
                 # CSV Download
-                csv_size = get_file_size_info(csv_path)
-                if os.path.exists(csv_path):
-                    btn_csv.download_button(
-                        f"CSV ({csv_size})",
-                        data=open(csv_path, "rb"),
-                        file_name=f.replace(".json", ".csv"),
-                        mime="text/csv",
-                        key=f"dl_csv_{f}",
-                        help="Raw CSV"
-                    )
-                else:
-                    btn_csv.button("CSV N/A", disabled=True, key=f"dl_csv_na_{f}")
+                create_dl_button(btn_csv, "CSV", paths["csv"], "text/csv", "dl_csv", "Raw CSV")
 
                 # Excel Download
-                xlsx_size = get_file_size_info(xlsx_path)
-                if os.path.exists(xlsx_path):
-                    btn_xlsx.download_button(
-                        f"Excel ({xlsx_size})",
-                        data=open(xlsx_path, "rb"),
-                        file_name=f.replace(".json", ".xlsx"),
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"dl_xlsx_{f}",
-                        help="Raw Excel"
-                    )
-                else:
-                    btn_xlsx.button("Excel N/A", disabled=True, key=f"dl_xlsx_na_{f}")
+                create_dl_button(btn_xlsx, "Excel", paths["xlsx"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dl_xlsx", "Raw Excel")
 
-                # Summary JSON Download
-                sum_json_size = get_file_size_info(sum_json_path)
-                if os.path.exists(sum_json_path):
-                    btn_sum_json.download_button(
-                        f"JSON ({sum_json_size})",
-                        data=open(sum_json_path, "rb"),
-                        file_name=f"{clean_name}{FILENAME_END_TEXT}.json",
-                        mime="application/json",
-                        key=f"dl_sum_json_{f}",
-                        help="Analysis Summary JSON"
-                    )
-                else:
-                    btn_sum_json.button("JSON N/A", disabled=True, key=f"dl_sum_json_na_{f}")
-
-                # Summary Excel Download
-                sum_xlsx_size = get_file_size_info(sum_xlsx_path)
-                if os.path.exists(sum_xlsx_path):
-                    btn_sum_xlsx.download_button(
-                        f"Excel ({sum_xlsx_size})",
-                        data=open(sum_xlsx_path, "rb"),
-                        file_name=f"{clean_name}{FILENAME_END_TEXT}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"dl_sum_xlsx_{f}",
-                        help="Analysis Summary Excel"
-                    )
-                else:
-                    btn_sum_xlsx.button("Excel N/A", disabled=True, key=f"dl_sum_xlsx_na_{f}")
+                # Analysis Downloads
+                create_dl_button(btn_sum_json, "JSON", paths["sum_json"], "application/json", "dl_sum_json", "Analysis Summary JSON")
+                create_dl_button(btn_sum_xlsx, "Excel", paths["sum_xlsx"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dl_sum_xlsx", "Analysis Summary Excel")
 
             except Exception as e:
-                col2.error("Error accessing files")
+                col2.error(f"Error accessing files: {e}")
 
             # --- Action Buttons ---
             act_col1, act_col2 = col4.columns(2)

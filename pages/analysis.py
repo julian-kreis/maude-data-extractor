@@ -12,8 +12,13 @@ from analyze import (
     XSLX_ANALYSIS_FOLDER,
     FILENAME_END_TEXT
 )
-from app import get_file_size_info
-from retrieve import EMPTY_FIELD
+from app import create_dl_button
+from retrieve import (
+    JSON_FOLDER,
+    CSV_FOLDER,
+    EXCEL_FOLDER,
+    EMPTY_FIELD
+)
 
 # Other label lists examples within this label, but gets truncated to this many characters
 OTHER_LABEL_MAX_CHARS = 50
@@ -30,6 +35,9 @@ else:
     ROOT_DIR = Path(__file__).parent.parent
 JSON_DIR = ROOT_DIR / JSON_ANALYSIS_FOLDER
 XLSX_DIR = ROOT_DIR / XSLX_ANALYSIS_FOLDER
+RAW_JSON_DIR = ROOT_DIR / JSON_FOLDER
+RAW_CSV_DIR = ROOT_DIR / CSV_FOLDER
+RAW_EXCEL_DIR = ROOT_DIR / EXCEL_FOLDER
 
 @st.cache_data
 def load_json_data(filepath):
@@ -134,30 +142,68 @@ def main():
 
         # --- SIDEBAR DOWNLOAD BUTTONS ---
         st.sidebar.divider()
-        st.sidebar.subheader("Download Summary Data")
 
-        json_size = get_file_size_info(selected_file)
-        json_bytes = selected_file.read_bytes()
-        st.sidebar.download_button(
-            label=f"JSON ({json_size})",
-            data=json_bytes,
-            file_name=selected_file.name,
+        # Raw Data Section
+        st.sidebar.subheader("Download Raw Data")
+
+        # Raw JSON
+        raw_json_filename = f"{selected_file.name.rsplit(FILENAME_END_TEXT, 1)[0]}.json"
+        create_dl_button(
+            column=st.sidebar,
+            label=f"JSON",
+            path=RAW_JSON_DIR / raw_json_filename,
             mime="application/json",
-            key=f"dl_json_{selected_file.stem}"
+            base_key=f"sb_raw_json_{selected_file.stem}",
+            help_text="Download the original unprocessed JSON"
         )
 
-        xlsx_filename = selected_file.stem + ".xlsx"
-        xlsx_path = XLSX_DIR / xlsx_filename
-        if xlsx_path.exists():
-            xlsx_size = get_file_size_info(xlsx_path)
-            xlsx_bytes = xlsx_path.read_bytes()
-            st.sidebar.download_button(
-                label=f"Excel ({xlsx_size})",
-                data=xlsx_bytes,
-                file_name=xlsx_filename,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key=f"dl_xlsx_{selected_file.stem}"
-            )
+        # Raw CSV
+        raw_csv_name = f"{selected_file.stem.rsplit(FILENAME_END_TEXT, 1)[0]}.csv"
+        create_dl_button(
+            column=st.sidebar,
+            label="CSV",
+            path=RAW_CSV_DIR / raw_csv_name,
+            mime="text/csv",
+            base_key=f"sb_raw_csv_{selected_file.stem}",
+            help_text="Download the original CSV version"
+        )
+
+        # Raw Excel
+        raw_xlsx_name = f"{selected_file.stem.rsplit(FILENAME_END_TEXT, 1)[0]}.xlsx"
+        create_dl_button(
+            column=st.sidebar,
+            label="Excel",
+            path=RAW_EXCEL_DIR / raw_xlsx_name,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            base_key=f"sb_raw_xlsx_{selected_file.stem}",
+            help_text="Download the original Excel version"
+        )
+
+        st.sidebar.divider()
+
+        # Summary/Analysis Data Section
+        st.sidebar.subheader("Download Summary Data")
+
+        # Analysis JSON (The file currently selected)
+        create_dl_button(
+            column=st.sidebar, 
+            label="JSON", 
+            path=selected_file, 
+            mime="application/json", 
+            base_key=f"sb_sum_json_{selected_file.stem}",
+            help_text="Download the analyzed summary JSON"
+        )
+
+        # Analysis Excel
+        sum_xlsx_path = XLSX_DIR / f"{selected_file.stem}.xlsx"
+        create_dl_button(
+            column=st.sidebar, 
+            label="Excel", 
+            path=sum_xlsx_path, 
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+            base_key=f"sb_sum_xlsx_{selected_file.stem}",
+            help_text="Download the analyzed summary Excel"
+        )
 
         models = data.get("list of models", [])
         start_date = format_date(data.get("earliest incident date"))
