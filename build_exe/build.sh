@@ -77,8 +77,6 @@ echo "====================================="
 
 cd "$STAGE"
 
-# Note: Added --add-data ".:." and --collect-binaries ctypes
-# On Linux/macOS, PyInstaller uses : as a separator for --add-data
 pyinstaller --clean --noconfirm --onedir \
 --name "MaudeDataExtractor" \
 --copy-metadata streamlit \
@@ -98,6 +96,25 @@ echo "Moving build to project root..."
 cd ..
 rm -rf dist
 cp -R "$STAGE/dist" ./dist
+
+# =====================================
+# 5. macOS Ad-hoc Signing (only on Mac) so only a single warning pops up instead of one for every binary
+# =====================================
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Signing all binaries manually..."
+    APP_PATH="dist/MaudeDataExtractor"
+
+    # 1. Remove attributes
+    xattr -cr "$APP_PATH"
+
+    # 2. Find and sign every library/binary inside the folder first
+    find "$APP_PATH" -type f \( -name "*.so" -or -name "*.dylib" -or -name "Python" \) -print0 | xargs -0 codesign --force --sign -
+
+    # 3. Sign the main executable last
+    codesign --force --sign - "$APP_PATH/MaudeDataExtractor"
+
+    echo "Manual recursive signing complete"
+fi
 
 echo "====================================="
 echo "BUILD COMPLETE"
