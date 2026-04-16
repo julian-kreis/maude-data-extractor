@@ -198,9 +198,10 @@ These values are defined in `analyze.py` and can be adjusted to change the behav
 | Constant | Description | Default |
 |----------|------------|---------|
 | `FILENAME_END_TEXT` | Added to the filename of all files generated with with analyze.py | "_summary" |
-| `MIN_PHRASE_WORDCOUNT` | Min wordcount of commom phrases to look for | 1 |
+| `MIN_PHRASE_WORDCOUNT` | Min wordcount of common phrases to look for | 2 |
 | `MAX_PHRASE_WORDCOUNT` | Max wordcount of common phrases to look for | 12 |
 | `IGNORED_WORDS` | Medical report boilerplate words to remove when looking for common phrases | "reported","event","procedure","provided","use","duplicate","report","medical","customer","received","associated","consequence","consequences","resulted","information","using","during","surgery","unknown","patient","complete","completed","observed","additional","another","adverse" |
+| `IMPORTANT_ENGLISH_STOPWORDS` | Words in sklearn's ENGLISH_STOPWORDS that should not be ignored due to flipping the meaning of phrases | "no","not","never","none","nothing","nowhere","neither","nor","without","cannot","cant" |
 | `JSON_ANALYSIS_FOLDER` | Directory where JSON summaries are saved (must be changed manually in .gitignore and build_exe files) | "analysis_json" |
 | `XLSX_ANALYSIS_FOLDER` | Directory where Excel summaries are saved (must be changed manually in .gitignore and build_exe files) | "analysis_excel" |
 

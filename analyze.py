@@ -1,5 +1,4 @@
 import os
-import re
 from openpyxl.styles import (
     Font,
     Alignment
@@ -26,7 +25,7 @@ TOP_N = 100
 DUPLICATE_THRESHOLD = 0.9
 
 # Length of phrases to look for
-MIN_PHRASE_WORDCOUNT = 1
+MIN_PHRASE_WORDCOUNT = 2
 MAX_PHRASE_WORDCOUNT = 12
 
 # Words to remove when looking for most the most common words/phrases due to
@@ -39,97 +38,93 @@ IGNORED_WORDS = {
     "complete", "completed","observed","additional","another","adverse"
 }
 
+# Default English stopwords in sklearn ENGLISH_STOP_WORDS that should be kept
+# due to completely flipping the meaning of phrases
+IMPORTANT_ENGLISH_STOPWORDS = {
+    "no","not","never","none","nothing","nowhere","neither","nor",
+    "without","cannot","cant"
+}
+
 # Folder names for where exported data is stored
 JSON_ANALYSIS_FOLDER = "analysis_json"
 XSLX_ANALYSIS_FOLDER = "analysis_excel"
 
 def find_common_phrases(data, top_n=TOP_N):
     """
-    Finds common phrases within sentence boundaries. 
+    Finds common phrases across the entire description text. 
     Removes sub-phrases if a longer parent phrase captures 
     at least 90% of its occurrences.
     """
 
     def remove_subphrases(candidate_results, max_len=MAX_PHRASE_WORDCOUNT, threshold=DUPLICATE_THRESHOLD):
-        # DOES NOT MAINTAIN LIST ORDER
-
         # tokenize + sort longest first
         phrases = [
             (tuple(p.split()), c)
             for p, c in candidate_results
             if len(p.split()) <= max_len
         ]
-
         phrases.sort(key=lambda x: (-len(x[0]), -x[1]))
 
-        # substring index built ONLY from kept longer phrases
         substring_index = collections.defaultdict(list)
-
         filtered = []
 
         for tokens, count in phrases:
             redundant = False
-
-            # check if any longer kept phrase contains this
-            for parent_tokens, parent_count in substring_index.get(tokens, []): # Do NOT remove parent_tokens even though it may say the variable is not accessed. Trust me.
+            for parent_tokens, parent_count in substring_index.get(tokens, []):
                 if parent_count >= threshold * count:
                     redundant = True
                     break
 
             if not redundant:
                 filtered.append((" ".join(tokens), count))
-
-                # add this phrase to index so it can remove shorter ones
                 length = len(tokens)
                 for sub_len in range(1, length):
                     for i in range(length - sub_len + 1):
                         substring = tokens[i:i+sub_len]
                         substring_index[substring].append((tokens, count))
-
         return filtered
 
-    # Pre-process into "Sentence-Blocked" strings
-    # Join sentences with a special non-alphanumeric character 
-    # and tell CountVectorizer to only look at words.
-    processed_descriptions = []
-    for entry in data:
-        desc = entry.get("Description", "")
-        # Split by sentence, clean, then join with a '.' to ensure n-grams don't bridge
-        sentences = re.split(r'[.!?]+', desc.lower())
-        # Join with a period because the default tokenizer in sklearn 
-        # treats punctuation as a separator and won't form n-grams across it.
-        processed_descriptions.append(". ".join(sentences))
+    # Simplified: Just grab the descriptions as they are.
+    # CountVectorizer handles lowercasing and punctuation-stripping by default.
+    processed_descriptions = [entry.get("Description", "") for entry in data]
 
     # Vectorize
     try:
         stop_words = set(ENGLISH_STOP_WORDS).union(IGNORED_WORDS)
-        stop_words.discard("not")
-        stop_words = list(stop_words)
+        for stop_word in IMPORTANT_ENGLISH_STOPWORDS:
+            stop_words.discard(stop_word)
         
         vectorizer = CountVectorizer(
             ngram_range=(MIN_PHRASE_WORDCOUNT, MAX_PHRASE_WORDCOUNT),
-            stop_words=stop_words,
+            stop_words=list(stop_words),
             binary=True, # Count only once per report
             min_df=2
         )
         X = vectorizer.fit_transform(processed_descriptions)
     
     except ValueError as e:
-        # Specifically catch if vocabulary is empty (can happen on small datasets)
         if "empty vocabulary" in str(e):
             return []
-        # If it's a different error, raise it as normal
         raise e
     
     # Aggregate Counts
     counts = X.sum(axis=0).A1.tolist()
     terms = vectorizer.get_feature_names_out()
     all_results = sorted(zip(terms, counts), key=lambda x: x[1], reverse=True)
+    all_results = all_results[:top_n*5] # top_n*5 limits the number of phrases to look at in the next steps while providing an adequate buffer
 
-    # Remove common subphrases as duplicates
-    filtered_results = remove_subphrases(all_results[:top_n*5]) # no limit causes unneeded processing time, too small a limit can delete valid results
+    # Remove phrases that end in one of the words filtered out of the ENGLISH_STOPWORDS list
+    # which includes phrases containing only those words
+    # (e.g., "no no", "cant not", "device no")
+    all_results = [
+        (phrase, count) for phrase, count in all_results
+        if (words := phrase.split()) and words[-1] not in IMPORTANT_ENGLISH_STOPWORDS
+    ]
 
-    # Return the top phrases in order
+    # Remove common subphrases
+    filtered_results = remove_subphrases(all_results) 
+
+    # Return top results
     filtered_results.sort(key=lambda x: x[1], reverse=True)
     return filtered_results[:top_n]
 
