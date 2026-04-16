@@ -101,19 +101,21 @@ cp -R "$STAGE/dist" ./dist
 # 5. macOS Ad-hoc Signing (only on Mac) so only a single warning pops up instead of one for every binary
 # =====================================
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "Signing all binaries manually..."
+    echo "====================================="
+    echo "Performing ad-hoc signing with --deep..."
+    echo "====================================="
+
     APP_PATH="dist/MaudeDataExtractor"
 
-    # 1. Remove attributes
+    # Remove quarantine and other extended attributes
+    echo "Removing extended attributes..."
     xattr -cr "$APP_PATH"
 
-    # 2. Find and sign every library/binary inside the folder first
-    find "$APP_PATH" -type f \( -name "*.so" -or -name "*.dylib" -or -name "Python" \) -print0 | xargs -0 codesign --force --sign -
+    # Sign the entire bundle recursively with ad-hoc signature
+    echo "Signing bundle recursively (ad-hoc)..."
+    codesign --force --deep --sign - "$APP_PATH/MaudeDataExtractor"
 
-    # 3. Sign the main executable last
-    codesign --force --sign - "$APP_PATH/MaudeDataExtractor"
-
-    echo "Manual recursive signing complete"
+    echo "Ad-hoc signing with --deep completed"
 fi
 
 echo "====================================="
