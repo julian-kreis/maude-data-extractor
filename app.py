@@ -59,7 +59,7 @@ def create_dl_button(column, label, path, mime, base_key, help_text=""):
     if os.path.exists(path_str):
         # Get modified time to force a fresh key/cache bust
         mtime = os.path.getmtime(path_str)
-        size = get_file_size_info(path) # Your existing size function
+        size = get_file_size_info(path)
         
         with open(path_str, "rb") as f:
             column.download_button(
@@ -234,10 +234,10 @@ def main():
             act_col1, act_col2 = col4.columns(2)
             
             if act_col1.button("✏️", key=f"btn_edit_{f}", help="Rename this record"):
-                rename_file_dialog(clean_name, file_paths)
+                rename_file_dialog(clean_name, list(paths.values()))
 
             if act_col2.button("🗑️", key=f"btn_del_{f}", help="Delete this record"):
-                confirm_delete_dialog(clean_name, file_paths)
+                confirm_delete_dialog(clean_name, list(paths.values()))
 
 def run_search_logic(cat_list_str, year_input, do_dedupe, do_merge, filename, api_key):
     cat_list = [c.strip() for c in cat_list_str.split(",") if c.strip()]
