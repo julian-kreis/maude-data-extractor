@@ -69,7 +69,7 @@ pip install --upgrade pyinstaller
 rm -rf build dist *.spec
 
 # =====================================
-# 4. Build EXE from Staging
+# 4. Build from Staging
 # =====================================
 echo "====================================="
 echo "Running PyInstaller"
@@ -109,14 +109,25 @@ else
     launcher.py
 fi
 
-# Move the final product back to the main project root
+# =====================================
+# 5. Move Build to Project Root
+# =====================================
 echo "Moving build to project root..."
 cd ..
+
 rm -rf dist
-cp -R "$STAGE/dist" ./dist
+mkdir dist
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "macOS: copying ONLY .app bundle"
+    cp -R "$STAGE/dist/MaudeDataExtractor.app" dist/
+else
+    echo "Linux/Other: copying full PyInstaller output"
+    cp -R "$STAGE/dist/"* dist/
+fi
 
 # =====================================
-# 5. macOS Ad-hoc Signing
+# 6. macOS Ad-hoc Signing
 # =====================================
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "====================================="
@@ -138,9 +149,11 @@ fi
 
 echo "====================================="
 echo "BUILD COMPLETE"
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Final build is in: ./dist/MaudeDataExtractor.app"
 else
     echo "Final build is in: ./dist/MaudeDataExtractor/"
 fi
+
 echo "====================================="
