@@ -131,3 +131,16 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 
     # Sign the entire bundle recursively with ad-hoc signature
     echo "Signing bundle recursively (ad-hoc)..."
+    codesign --force --deep --sign - "$APP_BUNDLE"
+
+    echo "Ad-hoc signing completed"
+fi
+
+echo "====================================="
+echo "BUILD COMPLETE"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Final build is in: ./dist/MaudeDataExtractor.app"
+else
+    echo "Final build is in: ./dist/MaudeDataExtractor/"
+fi
+echo "====================================="
