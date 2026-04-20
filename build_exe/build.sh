@@ -77,19 +77,37 @@ echo "====================================="
 
 cd "$STAGE"
 
-pyinstaller --clean --noconfirm --onedir \
---name "MaudeDataExtractor" \
---copy-metadata streamlit \
---collect-all streamlit \
---collect-all dotenv \
---collect-all dedupe \
---collect-all pandas \
---collect-all sklearn \
---collect-all plotly \
---collect-binaries ctypes \
---collect-binaries numpy \
---add-data ".:." \
-launcher.py
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "macOS detected: Building .app bundle (--windowed)..."
+    pyinstaller --clean --noconfirm --onedir --windowed \
+    --name "MaudeDataExtractor" \
+    --copy-metadata streamlit \
+    --collect-all streamlit \
+    --collect-all dotenv \
+    --collect-all dedupe \
+    --collect-all pandas \
+    --collect-all sklearn \
+    --collect-all plotly \
+    --collect-binaries ctypes \
+    --collect-binaries numpy \
+    --add-data ".:." \
+    launcher.py
+else
+    echo "Linux/Other detected: Building standard directory..."
+    pyinstaller --clean --noconfirm --onedir \
+    --name "MaudeDataExtractor" \
+    --copy-metadata streamlit \
+    --collect-all streamlit \
+    --collect-all dotenv \
+    --collect-all dedupe \
+    --collect-all pandas \
+    --collect-all sklearn \
+    --collect-all plotly \
+    --collect-binaries ctypes \
+    --collect-binaries numpy \
+    --add-data ".:." \
+    launcher.py
+fi
 
 # Move the final product back to the main project root
 echo "Moving build to project root..."
@@ -98,27 +116,18 @@ rm -rf dist
 cp -R "$STAGE/dist" ./dist
 
 # =====================================
-# 5. macOS Ad-hoc Signing (only on Mac) so only a single warning pops up instead of one for every binary
+# 5. macOS Ad-hoc Signing
 # =====================================
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "====================================="
-    echo "Performing ad-hoc signing with --deep..."
+    echo "Performing ad-hoc signing..."
     echo "====================================="
 
-    APP_PATH="dist/MaudeDataExtractor"
+    APP_BUNDLE="dist/MaudeDataExtractor.app"
 
     # Remove quarantine and other extended attributes
     echo "Removing extended attributes..."
-    xattr -cr "$APP_PATH"
+    xattr -cr "$APP_BUNDLE"
 
     # Sign the entire bundle recursively with ad-hoc signature
     echo "Signing bundle recursively (ad-hoc)..."
-    codesign --force --deep --sign - "$APP_PATH/MaudeDataExtractor"
-
-    echo "Ad-hoc signing with --deep completed"
-fi
-
-echo "====================================="
-echo "BUILD COMPLETE"
-echo "Final build is in: ./dist/MaudeDataExtractor/"
-echo "====================================="
