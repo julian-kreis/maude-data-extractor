@@ -22,7 +22,7 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 ## If you get errors running the published applications, try creating a local build on your computer
 
-- Download the zip file of the code https://github.com/julian-kreis/maude-data-extractor/archive/refs/heads/main.zip
+- [Download](https://github.com/julian-kreis/maude-data-extractor/archive/refs/heads/main.zip) the zip file of the code
 
 - Unzip the file
 
