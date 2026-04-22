@@ -6,33 +6,42 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 # For Non-Developers
 
-- Go to the [latest release](https://github.com/julian-kreis/maude-data-extractor/releases) and download the zip file corresponding to your OS
-
 **Windows**
+
+- Go to the [latest release](https://github.com/julian-kreis/maude-data-extractor/releases) and download the zip file
 
 - After downloading, unzip the folder 
 
 - Double click the application file in the folder to run the program
 
-**MacOS**
+## MacOS / Linux
 
-- Run the application file
-
-- You may need to allow the program to "run anyways" in settings
-
-## If you get errors running the published applications, try creating a local build on your computer
+You will have to create a local build on your computer.
 
 - [Download](https://github.com/julian-kreis/maude-data-extractor/archive/refs/heads/main.zip) the zip file of the code
 
 - Unzip the file
 
-- Open the `build_exe` folder
+- Open Terminal
 
-- **Windows:** Run build.bat
+- Navigate to the `build_exe` folder:
+  - **MacOS tip:** Type `cd ` (with a space), then drag the `build_exe` folder into the Terminal window and press Enter
+  - **Or manually:**
+    ```
+    cd path/to/maude-data-extractor-main/build_exe
+    ```
 
-- **Linux/MacOS:** Run build.sh
+- Make the build script executable (first time only):
+  ```
+  chmod +x build.sh
+  ```
 
-- After running the corresponding build file, you will have a runnable application generated in the `dist` folder
+- Run the build script:
+  ```
+  ./build.sh
+  ```
+
+- After running the build file, a runnable application will be generated in the `dist` folder.
 
 ---
 
