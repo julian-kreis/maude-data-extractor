@@ -8,9 +8,31 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 - Go to the latest release at https://github.com/julian-kreis/maude-data-extractor/releases and download the zip file corresponding to your OS
 
-- Unzip the folder 
+**Windows**
+
+- After downloading, unzip the folder 
 
 - Double click the application file in the folder to run the program
+
+**MacOS**
+
+- After downloading, move the application to a user-writable location on your computer
+
+- Run the application file
+
+## If you get errors running the published applications, try creating a local build on your computer
+
+- Download the zip file of the code https://github.com/julian-kreis/maude-data-extractor/archive/refs/heads/main.zip
+
+- Unzip the file
+
+- Open the `build_ex`e folder
+
+- **Windows:** Run build.bat
+
+- **Linux/MacOS:** Run build.sh
+
+- After running the corresponding build file, you will have a runnable application generated in the `dist` folder
 
 ---
 
