@@ -26,7 +26,7 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 - Unzip the file
 
-- Open the `build_ex`e folder
+- Open the `build_exe` folder
 
 - **Windows:** Run build.bat
 
