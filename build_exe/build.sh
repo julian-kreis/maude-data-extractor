@@ -69,7 +69,7 @@ pip install --upgrade pyinstaller
 rm -rf build dist *.spec
 
 # =====================================
-# 4. Build from Staging
+# 4. Build EXE from Staging
 # =====================================
 echo "====================================="
 echo "Running PyInstaller"
@@ -77,83 +77,29 @@ echo "====================================="
 
 cd "$STAGE"
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "macOS detected: Building .app bundle (--windowed)..."
-    pyinstaller --clean --noconfirm --onedir --windowed \
-    --name "MaudeDataExtractor" \
-    --copy-metadata streamlit \
-    --collect-all streamlit \
-    --collect-all dotenv \
-    --collect-all dedupe \
-    --collect-all pandas \
-    --collect-all sklearn \
-    --collect-all plotly \
-    --collect-binaries ctypes \
-    --collect-binaries numpy \
-    --add-data ".:." \
-    launcher.py
-else
-    echo "Linux/Other detected: Building standard directory..."
-    pyinstaller --clean --noconfirm --onedir \
-    --name "MaudeDataExtractor" \
-    --copy-metadata streamlit \
-    --collect-all streamlit \
-    --collect-all dotenv \
-    --collect-all dedupe \
-    --collect-all pandas \
-    --collect-all sklearn \
-    --collect-all plotly \
-    --collect-binaries ctypes \
-    --collect-binaries numpy \
-    --add-data ".:." \
-    launcher.py
-fi
+# Note: Added --add-data ".:." and --collect-binaries ctypes
+# On Linux/macOS, PyInstaller uses : as a separator for --add-data
+pyinstaller --clean --noconfirm --onedir \
+--name "MaudeDataExtractor" \
+--copy-metadata streamlit \
+--collect-all streamlit \
+--collect-all dotenv \
+--collect-all dedupe \
+--collect-all pandas \
+--collect-all sklearn \
+--collect-all plotly \
+--collect-binaries ctypes \
+--collect-binaries numpy \
+--add-data ".:." \
+launcher.py
 
-# =====================================
-# 5. Move Build to Project Root
-# =====================================
+# Move the final product back to the main project root
 echo "Moving build to project root..."
 cd ..
-
 rm -rf dist
-mkdir dist
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "macOS: copying ONLY .app bundle"
-    cp -R "$STAGE/dist/MaudeDataExtractor.app" dist/
-else
-    echo "Linux/Other: copying full PyInstaller output"
-    cp -R "$STAGE/dist/"* dist/
-fi
-
-# =====================================
-# 6. macOS Ad-hoc Signing
-# =====================================
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "====================================="
-    echo "Performing ad-hoc signing..."
-    echo "====================================="
-
-    APP_BUNDLE="dist/MaudeDataExtractor.app"
-
-    # Remove quarantine and other extended attributes
-    echo "Removing extended attributes..."
-    xattr -cr "$APP_BUNDLE"
-
-    # Sign the entire bundle recursively with ad-hoc signature
-    echo "Signing bundle recursively (ad-hoc)..."
-    codesign --force --deep --sign - "$APP_BUNDLE"
-
-    echo "Ad-hoc signing completed"
-fi
+cp -R "$STAGE/dist" ./dist
 
 echo "====================================="
 echo "BUILD COMPLETE"
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "Final build is in: ./dist/MaudeDataExtractor.app"
-else
-    echo "Final build is in: ./dist/MaudeDataExtractor/"
-fi
-
+echo "Final build is in: ./dist/MaudeDataExtractor/"
 echo "====================================="
