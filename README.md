@@ -31,14 +31,9 @@ You will have to create a local build on your computer.
     cd path/to/maude-data-extractor-main/build_exe
     ```
 
-- Make the build script executable (first time only):
-  ```
-  chmod +x build.sh
-  ```
-
 - Run the build script:
   ```
-  ./build.sh
+  bash build.sh
   ```
 
 - After running the build file, a runnable application will be generated in the `dist` folder.
