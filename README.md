@@ -16,9 +16,9 @@ This Python project fetches medical device adverse event reports from the FDA MA
 
 **MacOS**
 
-- After downloading, move the application to a user-writable location on your computer
-
 - Run the application file
+
+- You may need to allow the program to "run anyways" in settings
 
 ## If you get errors running the published applications, try creating a local build on your computer
 
